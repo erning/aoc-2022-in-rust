@@ -16,6 +16,7 @@ fn main() {
 
     let puzzles: Vec<(&str, SolverFn, SolverFn)> = vec![
         puzzle!(day01, "Calorie Counting"),
+        puzzle!(day02, "Rock Paper Scissors"),
     ];
 
     let filename = match env::args().find(|a| a == "--example") {
