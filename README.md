@@ -10,5 +10,9 @@ Part Two: 204837
 --- Day 2: Rock Paper Scissors ---
 Part One: 12740
 Part Two: 11980
+
+--- Day 3: Rucksack Reorganization ---
+Part One: 8018
+Part Two: 2518
 ```
 
