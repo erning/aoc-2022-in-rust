@@ -14,5 +14,9 @@ Part Two: 11980
 --- Day 3: Rucksack Reorganization ---
 Part One: 8018
 Part Two: 2518
+
+--- Day 4: Camp Cleanup ---
+Part One: 536
+Part Two: 845
 ```
 
