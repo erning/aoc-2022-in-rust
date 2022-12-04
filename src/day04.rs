@@ -1,25 +1,27 @@
-fn parse_input(input: &str) -> Vec<Vec<i32>> {
+fn parse_input(input: &str) -> Vec<[i32; 4]> {
     input
         .lines()
-        .map(|v| v.split(&['-', ',']).map(|v| v.parse().unwrap()).collect())
+        .map(|v| {
+            v.split(&['-', ','])
+                .map(|v| v.parse().unwrap())
+                .collect::<Vec<i32>>()
+                .try_into()
+                .unwrap()
+        })
         .collect()
 }
 
 pub fn part_one(input: &str) -> usize {
     parse_input(input)
         .iter()
-        .filter(|v| {
-            (v[0] >= v[2] && v[1] <= v[3]) || (v[2] >= v[0] && v[3] <= v[1])
-        })
+        .filter(|[a, b, c, d]| (a > c && b <= d) || (c >= a && d <= b))
         .count()
 }
 
 pub fn part_two(input: &str) -> usize {
     parse_input(input)
         .iter()
-        .filter(|v| {
-            (v[0] <= v[2] && v[1] >= v[2]) || (v[2] <= v[0] && v[3] >= v[0])
-        })
+        .filter(|[a, b, c, d]| (a <= c && b >= c) || (c <= a && d >= a))
         .count()
 }
 
