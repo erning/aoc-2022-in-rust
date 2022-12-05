@@ -18,5 +18,9 @@ Part Two: 2518
 --- Day 4: Camp Cleanup ---
 Part One: 536
 Part Two: 845
+
+--- Day 5: Supply Stacks ---
+Part One: TQRFCBSJJ
+Part Two: RMHFJNVFP
 ```
 

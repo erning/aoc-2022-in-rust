@@ -36,8 +36,8 @@ fn parse_input(input: &str) -> (Vec<Vec<char>>, Vec<[usize; 3]>) {
         let mut iter = line.split_ascii_whitespace();
         moves.push([
             iter.nth(1).unwrap().parse().unwrap(),
-            iter.nth(1).unwrap().parse().unwrap(),
-            iter.nth(1).unwrap().parse().unwrap(),
+            iter.nth(1).unwrap().parse::<usize>().unwrap() - 1,
+            iter.nth(1).unwrap().parse::<usize>().unwrap() - 1,
         ]);
     }
     (stacks, moves)
@@ -47,8 +47,8 @@ pub fn part_one(input: &str) -> String {
     let (mut stacks, moves) = parse_input(input);
     for [n, a, b] in moves {
         for _ in 0..n {
-            let c = stacks[a - 1].pop().unwrap();
-            stacks[b - 1].push(c);
+            let c = stacks[a].pop().unwrap();
+            stacks[b].push(c);
         }
     }
     let mut ans: Vec<char> = vec![];
@@ -63,10 +63,11 @@ pub fn part_two(input: &str) -> String {
     for [n, a, b] in moves {
         let mut s: Vec<char> = vec![];
         for _ in 0..n {
-            s.push(stacks[a - 1].pop().unwrap());
+            let c = stacks[a].pop().unwrap();
+            s.push(c);
         }
         while let Some(c) = s.pop() {
-            stacks[b - 1].push(c);
+            stacks[b].push(c);
         }
     }
     let mut ans: Vec<char> = vec![];
