@@ -22,5 +22,9 @@ Part Two: 845
 --- Day 5: Supply Stacks ---
 Part One: TQRFCBSJJ
 Part Two: RMHFJNVFP
+
+--- Day 6: Tuning Trouble ---
+Part One: 1210
+Part Two: 3476
 ```
 
