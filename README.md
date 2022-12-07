@@ -26,5 +26,9 @@ Part Two: RMHFJNVFP
 --- Day 6: Tuning Trouble ---
 Part One: 1210
 Part Two: 3476
+
+--- Day 7: No Space Left On Device ---
+Part One: 2031851
+Part Two: 2568781
 ```
 
