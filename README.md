@@ -30,5 +30,9 @@ Part Two: 3476
 --- Day 7: No Space Left On Device ---
 Part One: 2031851
 Part Two: 2568781
+
+--- Day 8: Treetop Tree House ---
+Part One: 1560
+Part Two: 252000
 ```
 

@@ -22,6 +22,7 @@ fn main() {
         puzzle!(day05, "Supply Stacks"),
         puzzle!(day06, "Tuning Trouble"),
         puzzle!(day07, "No Space Left On Device"),
+        puzzle!(day08, "Treetop Tree House"),
     ];
 
     let filename = match env::args().find(|a| a == "--example") {
