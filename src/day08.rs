@@ -16,7 +16,6 @@ pub fn part_one(input: &str) -> usize {
                 || ((j + 1)..h).all(|p| grid[i][p] < v)
             {
                 count += 1;
-                continue;
             }
         }
     }
