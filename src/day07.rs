@@ -4,28 +4,25 @@ fn parse_input(input: &str) -> Vec<(Vec<&str>, &str, usize)> {
     let mut currdir: Vec<&str> = vec![];
     let mut files = vec![];
     for line in input.lines() {
-        if line.starts_with("$ cd") {
-            let dir = &line[5..];
-            if dir == ".." {
-                currdir.pop();
-            } else if dir == "/" {
+        match line.split_ascii_whitespace().collect::<Vec<&str>>()[..] {
+            ["$", "cd", "/"] => {
                 currdir.clear();
-            } else {
+            }
+            ["$", "cd", ".."] => {
+                currdir.pop();
+            }
+            ["$", "cd", dir] => {
                 currdir.push(dir);
             }
-            continue;
+            ["$", "ls"] => {}
+            ["dir", _] => {}
+            [size, file] => {
+                files.push((currdir.clone(), file, size.parse().unwrap()))
+            }
+            _ => {
+                panic!("unknown")
+            }
         }
-        if line.starts_with("$ ") {
-            continue;
-        }
-        if line.starts_with("dir") {
-            continue;
-        }
-        let mut iter = line.split_whitespace();
-        let size: usize = iter.next().unwrap().parse().unwrap();
-        let name = iter.next().unwrap();
-        let dir = currdir.clone();
-        files.push((dir, name, size));
     }
     files
 }
@@ -35,7 +32,7 @@ pub fn part_one(input: &str) -> usize {
     let mut dirs: HashSet<Vec<&str>> = HashSet::new();
     files.iter().map(|(v, _, _)| v).for_each(|v| {
         for i in 0..v.len() {
-            dirs.insert(v[..i+1].to_vec());
+            dirs.insert(v[..i + 1].to_vec());
         }
     });
     dirs.iter()
