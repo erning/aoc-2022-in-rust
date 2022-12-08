@@ -48,7 +48,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn part_one_example() {
+    fn example() {
         assert_eq!(part_one("mjqjpqmgbljsphdztnvjfqwrcgsmlb"), 7);
         assert_eq!(part_one("bvwbjplbgvbhsrlpgdmjqwftvncz"), 5);
         assert_eq!(part_one("nppdvjthqldpwncqszvftbrmjlhg"), 6);
