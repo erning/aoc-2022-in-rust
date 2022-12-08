@@ -1,8 +1,9 @@
-use std::collections::HashSet;
+use std::collections::HashMap;
 
 fn parse_input(input: &str) -> Vec<(Vec<&str>, &str, usize)> {
     let mut currdir: Vec<&str> = vec![];
-    let mut files = vec![];
+    let mut fs: HashMap<(Vec<&str>, &str), usize> = HashMap::new();
+    fs.insert((vec![], ""), 0);
     for line in input.lines() {
         match line.split_ascii_whitespace().collect::<Vec<&str>>()[..] {
             ["$", "cd", "/"] => {
@@ -13,57 +14,52 @@ fn parse_input(input: &str) -> Vec<(Vec<&str>, &str, usize)> {
             }
             ["$", "cd", dir] => {
                 currdir.push(dir);
+                fs.insert((currdir.clone(), ""), 0);
             }
             ["$", "ls"] => {}
-            ["dir", _] => {}
+            ["dir", dir] => {
+                let mut newdir = currdir.clone();
+                newdir.push(dir);
+                fs.insert((newdir, ""), 0);
+            }
             [size, file] => {
-                files.push((currdir.clone(), file, size.parse().unwrap()))
+                let size = size.parse().unwrap();
+                fs.insert((currdir.clone(), file), size);
+                for i in 0..=currdir.len() {
+                    if let Some(v) = fs.get_mut(&(currdir[..i].to_vec(), ""))
+                    {
+                        *v += size;
+                    }
+                }
             }
             _ => {
                 panic!("unknown")
             }
         }
     }
-    files
+    fs.into_iter().map(|((a, b), c)| (a, b, c)).collect()
 }
 
 pub fn part_one(input: &str) -> usize {
-    let files = parse_input(input);
-    let mut dirs: HashSet<Vec<&str>> = HashSet::new();
-    files.iter().map(|(v, _, _)| v).for_each(|v| {
-        for i in 0..v.len() {
-            dirs.insert(v[..i + 1].to_vec());
-        }
-    });
-    dirs.iter()
-        .map(|dir| {
-            files
-                .iter()
-                .filter(|(v, _, _)| v.starts_with(dir))
-                .map(|(_, _, v)| v)
-                .sum::<usize>()
-        })
-        .filter(|&v| v <= 100000)
+    let fs = parse_input(input);
+    fs.iter()
+        .filter(|(_, file, size)| file.is_empty() && size <= &100000)
+        .map(|(_, _, size)| *size)
         .sum()
 }
 
 pub fn part_two(input: &str) -> usize {
-    let files = parse_input(input);
-    let unused: usize =
-        70000000 - files.iter().map(|(_, _, v)| v).sum::<usize>();
-
-    let dirs: HashSet<Vec<&str>> =
-        files.iter().map(|v| v.0.clone()).collect();
-
-    dirs.iter()
-        .map(|dir| {
-            files
-                .iter()
-                .filter(|(v, _, _)| v.starts_with(dir))
-                .map(|(_, _, v)| v)
-                .sum::<usize>()
+    let fs = parse_input(input);
+    let unused: usize = 70000000
+        - fs.iter()
+            .find(|(dir, file, _)| dir.is_empty() && file.is_empty())
+            .map(|(_, _, size)| size)
+            .unwrap();
+    fs.iter()
+        .filter(|(_, file, size)| {
+            file.is_empty() && unused + size >= 30000000
         })
-        .filter(|&v| unused + v >= 30000000)
+        .map(|(_, _, size)| *size)
         .min()
         .unwrap()
 }
@@ -76,6 +72,15 @@ mod tests {
     #[test]
     fn example() {
         let input = read_example(7);
+        // let mut fs = parse_input(&input);
+        // fs.sort_unstable();
+        // for (dir, file, size) in fs {
+        //     if dir.is_empty() {
+        //         println!("/{} -- {}", file, size);
+        //     } else {
+        //         println!("/{}/{} -- {}", dir.join("/"), file, size);
+        //     }
+        // }
         assert_eq!(part_one(&input), 95437);
         assert_eq!(part_two(&input), 24933642);
     }
