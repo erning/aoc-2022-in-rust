@@ -1,8 +1,5 @@
-fn parse_input(input: &str) -> Vec<Vec<u8>> {
-    input
-        .lines()
-        .map(|v| v.bytes().map(|v| v - b'0').collect::<Vec<u8>>())
-        .collect()
+fn parse_input(input: &str) -> Vec<Vec<char>> {
+    input.lines().map(|v| v.chars().collect()).collect()
 }
 
 pub fn part_one(input: &str) -> usize {
