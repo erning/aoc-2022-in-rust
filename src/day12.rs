@@ -70,12 +70,20 @@ fn dijkstra(
     None
 }
 
-pub fn part_one(input: &str) -> i32 {
-    let parsed = parse_input(input);
+fn shortest(
+    heightmap: &Vec<Vec<u8>>,
+    s: (usize, usize),
+    e: (usize, usize),
+) -> Option<i32> {
     let mut visited: HashSet<(usize, usize)> = HashSet::new();
     let mut queue: BinaryHeap<(i32, (usize, usize))> = BinaryHeap::new();
-    queue.push((0, parsed.start));
-    dijkstra(&parsed.heightmap, parsed.end, &mut visited, &mut queue).unwrap()
+    queue.push((0, s));
+    dijkstra(heightmap, e, &mut visited, &mut queue)
+}
+
+pub fn part_one(input: &str) -> i32 {
+    let parsed = parse_input(input);
+    shortest(&parsed.heightmap, parsed.start, parsed.end).unwrap()
 }
 
 pub fn part_two(input: &str) -> i32 {
@@ -90,13 +98,7 @@ pub fn part_two(input: &str) -> i32 {
     }
     starts
         .into_iter()
-        .filter_map(|s| {
-            let mut visited: HashSet<(usize, usize)> = HashSet::new();
-            let mut queue: BinaryHeap<(i32, (usize, usize))> =
-                BinaryHeap::new();
-            queue.push((0, s));
-            dijkstra(&parsed.heightmap, parsed.end, &mut visited, &mut queue)
-        })
+        .filter_map(|s| shortest(&parsed.heightmap, s, parsed.end))
         .min()
         .unwrap()
 }
