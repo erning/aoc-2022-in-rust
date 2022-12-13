@@ -52,4 +52,8 @@ Part Two:
 --- Day 11: Monkey in the Middle ---
 Part One: 121450
 Part Two: 28244037010
+
+--- Day 12: Hill Climbing Algorithm ---
+Part One: 517
+Part Two: 512
 ```
