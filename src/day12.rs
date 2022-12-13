@@ -1,4 +1,5 @@
-use std::collections::{BinaryHeap, HashSet};
+use std::collections::HashSet;
+use std::collections::VecDeque;
 
 #[derive(Debug)]
 struct ParsedInput {
@@ -47,13 +48,13 @@ where
     F2: Fn((usize, usize), (usize, usize)) -> bool,
 {
     let mut visited: HashSet<(usize, usize)> = HashSet::new();
-    let mut queue: BinaryHeap<(i32, (usize, usize))> = BinaryHeap::new();
-    queue.push((0, s));
+    let mut queue: VecDeque<(i32, (usize, usize))> = VecDeque::new();
+    queue.push_back((0, s));
     let h = heightmap.len() as i32;
     let w = heightmap[0].len() as i32;
-    while let Some((step, p)) = queue.pop() {
+    while let Some((step, p)) = queue.pop_front() {
         if is_finish(p) {
-            return Some(-step);
+            return Some(step);
         }
         if !visited.insert(p) {
             continue;
@@ -68,7 +69,7 @@ where
                 continue;
             }
             if is_movable(p, np) {
-                queue.push((step - 1, np));
+                queue.push_back((step + 1, np));
             }
         }
     }
