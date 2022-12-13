@@ -103,7 +103,7 @@ pub fn part_one(input: &str) -> usize {
     parse_input(input)[..]
         .chunks(2)
         .enumerate()
-        .filter(|(_, v)| v[0] < v[1])
+        .filter(|&(_, v)| v[0] < v[1])
         .map(|(i, _)| i + 1)
         .sum()
 }
@@ -118,13 +118,24 @@ pub fn part_two(input: &str) -> usize {
     packets.push(p2.clone());
     packets.sort_unstable();
 
-    let mut v = 1;
-    for (i, p) in packets.iter().enumerate() {
-        if &p1 == p || &p2 == p {
-            v *= i + 1;
-        }
-    }
-    v
+    packets
+        .iter()
+        .enumerate()
+        .filter(|&(_, p)| p == &p1 || p == &p2)
+        .map(|(i, _)| i + 1)
+        .product()
+
+    // let mut a = 0;
+    // let mut b = 0;
+    // for (i, p) in packets.iter().enumerate() {
+    //     if p == &p1 {
+    //         a = i + 1;
+    //     } else if p == &p2 {
+    //         b = i + 1;
+    //         break;
+    //     }
+    // }
+    // a * b
 }
 
 #[cfg(test)]
