@@ -13,26 +13,24 @@ impl FromStr for Packet {
     type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        fn parse_value(
-            chars: &mut Peekable<Chars>,
-        ) -> Result<Packet, String> {
+        fn parse_value(chars: &mut Peekable<Chars>) -> Packet {
             let mut value = 0;
             while let Some(c) = chars.next_if(|&c| c.is_ascii_digit()) {
                 value = value * 10 + c.to_digit(10).unwrap();
             }
-            Ok(Packet::Value(value))
+            Packet::Value(value)
         }
 
-        fn parse_list(chars: &mut Peekable<Chars>) -> Result<Packet, String> {
+        fn parse_list(chars: &mut Peekable<Chars>) -> Packet {
             let mut list: Vec<Packet> = vec![];
             while let Some(c) = chars.peek() {
                 match c {
                     '0'..='9' => {
-                        list.push(parse_value(chars).unwrap());
+                        list.push(parse_value(chars));
                     }
                     '[' => {
                         chars.next();
-                        list.push(parse_list(chars).unwrap());
+                        list.push(parse_list(chars));
                     }
                     ']' => {
                         chars.next();
@@ -41,19 +39,21 @@ impl FromStr for Packet {
                     ',' => {
                         chars.next();
                     }
-                    _ => return Err("unknow packet".to_string()),
+                    _ => {
+                        panic!("unknow packet");
+                    }
                 }
             }
-            Ok(Packet::List(list))
+            Packet::List(list)
         }
 
         let mut chars = s.chars().peekable();
         if let Some(c) = chars.next() {
             if c == '[' {
-                return parse_list(&mut chars);
+                return Ok(parse_list(&mut chars));
             }
         }
-        Err("Sould be a list".to_string())
+        Err("should be a list".to_string())
     }
 }
 
