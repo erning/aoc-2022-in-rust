@@ -1,5 +1,6 @@
 use std::env;
 use std::fmt::Display;
+use std::time::SystemTime;
 
 fn main() {
     macro_rules! puzzle {
@@ -35,6 +36,8 @@ fn main() {
         Some(_) => "example",
     };
 
+    let show_time = env::args().any(|a| a == "--time");
+
     let mut days: Vec<usize> =
         env::args().filter_map(|a| a.parse().ok()).collect();
 
@@ -43,6 +46,8 @@ fn main() {
     }
 
     for day in days {
+        let bt = SystemTime::now();
+
         let (title, part1, part2) = &puzzles[day - 1];
         let input = aoc::read_as_string(day as u8, filename);
         let input = input.as_str();
@@ -50,6 +55,12 @@ fn main() {
         println!("--- Day {}: {} ---", day, title);
         println!("Part One: {}", part1(input));
         println!("Part Two: {}", part2(input));
+
+        if show_time {
+            let et = SystemTime::now();
+            let duration = et.duration_since(bt).unwrap_or_default();
+            println!("Duration: {:?}", duration);
+        }
         println!();
     }
 }
