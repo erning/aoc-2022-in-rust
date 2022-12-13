@@ -56,4 +56,8 @@ Part Two: 28244037010
 --- Day 12: Hill Climbing Algorithm ---
 Part One: 517
 Part Two: 512
+
+--- Day 13: Distress Signal ---
+Part One: 5806
+Part Two: 23600
 ```
