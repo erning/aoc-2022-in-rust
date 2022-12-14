@@ -60,4 +60,8 @@ Part Two: 512
 --- Day 13: Distress Signal ---
 Part One: 5806
 Part Two: 23600
+
+--- Day 14: Regolith Reservoir ---
+Part One: 843
+Part Two: 27625
 ```
