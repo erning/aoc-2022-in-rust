@@ -64,4 +64,8 @@ Part Two: 23600
 --- Day 14: Regolith Reservoir ---
 Part One: 843
 Part Two: 27625
+
+--- Day 15: Beacon Exclusion Zone ---
+Part One: 5832528
+Part Two: 13360899249595
 ```
