@@ -26,18 +26,17 @@ fn merge_segments(segments: &[(i32, i32)]) -> Vec<(i32, i32)> {
 }
 
 fn find_segments_at_row(
-    sensors: &[(i32, i32, i32, i32)],
+    sensors: &[(i32, i32, i32)],
     row: i32,
 ) -> Vec<(i32, i32)> {
     let mut segments: Vec<(i32, i32)> = Vec::new();
-    for &(x1, y1, x2, y2) in sensors.iter() {
-        let manhattan_distance = (x2 - x1).abs() + (y2 - y1).abs();
-        let distance_to_row = (row - y1).abs();
-        let offset = manhattan_distance - distance_to_row;
+    for &(x, y, d) in sensors.iter() {
+        let distance_to_row = (row - y).abs();
+        let offset = d - distance_to_row;
         if offset < 0 {
             continue;
         }
-        let (a, b) = (x1 - offset, x1 + offset);
+        let (a, b) = (x - offset, x + offset);
         segments.push((a, b));
     }
     segments.sort_unstable();
@@ -45,7 +44,7 @@ fn find_segments_at_row(
     segments
 }
 
-fn parse_input(input: &str) -> Vec<(i32, i32, i32, i32)> {
+fn parse_input(input: &str) -> Vec<(i32, i32, i32)> {
     input
         .lines()
         .map(|v| {
@@ -55,7 +54,7 @@ fn parse_input(input: &str) -> Vec<(i32, i32, i32, i32)> {
                 .filter(|(i, _)| [1, 3, 5, 7].contains(i))
                 .map(|(_, v)| v.parse().unwrap())
                 .collect::<Vec<i32>>();
-            (v[0], v[1], v[2], v[3])
+            (v[0], v[1], (v[2] - v[0]).abs() + (v[3] - v[1]).abs())
         })
         .collect()
 }
@@ -72,7 +71,8 @@ pub fn part_two(input: &str) -> i64 {
     let sensors = parse_input(input);
 
     let range = if cfg!(test) { 20 } else { 4000000 };
-    for y in (0..=range).rev() { // trick ;-)
+    for y in (0..=range).rev() {
+        // trick ;-)
         let segments = find_segments_at_row(&sensors, y);
         if segments.len() <= 1 {
             continue;
