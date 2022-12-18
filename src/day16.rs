@@ -1,93 +1,118 @@
-use std::collections::BinaryHeap;
 use std::collections::HashMap;
-use std::collections::VecDeque;
 
-fn parse_input(input: &str) -> HashMap<&str, (i32, Vec<&str>)> {
+fn parse_input(
+    input: &str,
+) -> (HashMap<&str, u32>, HashMap<u32, (i32, Vec<u32>)>) {
+    let mut codes: HashMap<&str, u32> = HashMap::new();
     input
+        .lines()
+        .filter(|v| &v[23..24] != "0")
+        .map(|v| &v[6..8])
+        .enumerate()
+        .for_each(|(i, v)| {
+            codes.insert(v, 1 << i);
+        });
+    let start = 1 << codes.len();
+    input
+        .lines()
+        .filter(|v| &v[23..24] == "0")
+        .map(|v| &v[6..8])
+        .enumerate()
+        .for_each(|(i, v)| {
+            codes.insert(v, i as u32 + start);
+        });
+
+    let cave: HashMap<u32, (i32, Vec<u32>)> = input
         .lines()
         .map(|v| {
             let s = v.split(';').collect::<Vec<&str>>();
-            let name = &s[0][6..8];
+            let name = *codes.get(&s[0][6..8]).unwrap();
             let rate = s[0][23..].parse::<i32>().unwrap();
             let nexts = s[1]
                 .split([' ', ','])
                 .filter(|v| !v.is_empty())
                 .enumerate()
                 .filter(|&(i, _)| i >= 4)
-                .map(|(_, v)| v)
-                .collect::<Vec<&str>>();
+                .map(|(_, v)| *codes.get(v).unwrap())
+                .collect::<Vec<u32>>();
             (name, (rate, nexts))
         })
-        .collect()
+        .collect();
+
+    (codes, cave)
 }
 
 fn explore(
-    minute: i32,
-    start: &str,
-    valves: &HashMap<&str, (i32, Vec<&str>)>,
-    max: &mut i32,
-) {
-    let mut paths: HashMap<&str, HashMap<&str, i32>> = HashMap::new();
-    for a in valves.keys() {
-        let mut p: HashMap<&str, i32> = HashMap::new();
-        let mut queue: VecDeque<(i32, &str)> = VecDeque::new();
-        queue.push_back((0, a));
-        while let Some((m, b)) = queue.pop_front() {
-            p.insert(b, m);
-            let (_, nexts) = valves.get(b).unwrap();
-            for n in nexts {
-                if p.contains_key(n) {
-                    continue;
+    minute: usize,
+    start: u32,
+    cave: &HashMap<u32, (i32, Vec<u32>)>,
+) -> i32 {
+    // (valve, opened) -> released
+    let mut visited: HashMap<(u32, u32), i32> = HashMap::new();
+    // (valve, opened, pressure, released)
+    let mut prev: Vec<(u32, u32, i32, i32)> = vec![(start, 0, 0, 0)];
+
+    for _ in 0..minute {
+        let mut curr: Vec<(u32, u32, i32, i32)> = Vec::new();
+        fn push(
+            curr: &mut Vec<(u32, u32, i32, i32)>,
+            visited: &mut HashMap<(u32, u32), i32>,
+            valve: u32,
+            opened: u32,
+            pressure: i32,
+            released: i32,
+        ) {
+            match visited.get(&(valve, opened)) {
+                Some(v) if *v >= released => {}
+                _ => {
+                    curr.push((valve, opened, pressure, released));
+                    visited.insert((valve, opened), released);
                 }
-                queue.push_back((m + 1, n));
             }
         }
-        paths.insert(a, p);
+
+        for (valve, opened, pressure, released) in prev.into_iter() {
+            let (rate, nexts) = cave.get(&valve).unwrap();
+            let released = released + pressure;
+
+            // open valve
+            if *rate > 0 && (opened & valve == 0) {
+                push(
+                    &mut curr,
+                    &mut visited,
+                    valve,
+                    opened | valve,
+                    pressure + *rate,
+                    released,
+                );
+            }
+
+            // stay
+            visited.insert((valve, opened), released);
+
+            // move to next
+            for next in nexts.into_iter() {
+                push(
+                    &mut curr,
+                    &mut visited,
+                    *next,
+                    opened,
+                    pressure,
+                    released,
+                );
+            }
+        }
+        prev = curr;
+        // let max = prev.iter().map(|(_, _, _, v)| *v).max().unwrap();
+        // println!("{}: {}", i + 1, max);
     }
-
-    // minute, released, valve, previous-valves, releasing-per-minute
-    let mut queue: BinaryHeap<(i32, i32, &str, Vec<&str>, i32)> =
-        BinaryHeap::new();
-    queue.push((minute, 0, start, vec![], 0));
-
-    let pendings: Vec<&str> = valves
-        .iter()
-        .filter(|(_, (v, _))| *v > 0)
-        .map(|(v, _)| *v)
-        .collect();
-
-    while let Some((remaining, released, valve, prev, rpm)) = queue.pop() {
-        if remaining <= 0 {
-            continue;
-        }
-        for next in pendings
-            .iter()
-            .filter(|v| *v != &valve && !prev.contains(v))
-        {
-            let (rate, _) = valves.get(next).unwrap();
-            // let key = [valve, next].join("");
-            let m = 1 + paths.get(valve).unwrap().get(next).unwrap();
-            let mut opened = prev.clone();
-            opened.push(valve);
-            queue.push((
-                (remaining - m).max(0),
-                released + rpm * m,
-                next,
-                opened,
-                rpm + rate,
-            ));
-        }
-        if *max < released + remaining * rpm {
-            *max = released + remaining * rpm;
-        }
-    }
+    prev.iter().map(|(_, _, _, v)| *v).max().unwrap()
 }
 
 pub fn part_one(input: &str) -> i32 {
-    let valves = parse_input(input);
-    let mut max = i32::MIN;
-    explore(30, "AA", &valves, &mut max);
-    max
+    let (codes, cave) = parse_input(input);
+    let start = *codes.get("AA").unwrap();
+    explore(30, start, &cave)
 }
 
 pub fn part_two(input: &str) -> i32 {
