@@ -1,118 +1,100 @@
 use std::collections::HashMap;
+use std::collections::VecDeque;
 
-fn parse_input(
-    input: &str,
-) -> (HashMap<&str, u32>, HashMap<u32, (i32, Vec<u32>)>) {
-    let mut codes: HashMap<&str, u32> = HashMap::new();
+fn parse_input(input: &str) -> Vec<(&str, i32, Vec<&str>)> {
     input
-        .lines()
-        .filter(|v| &v[23..24] != "0")
-        .map(|v| &v[6..8])
-        .enumerate()
-        .for_each(|(i, v)| {
-            codes.insert(v, 1 << i);
-        });
-    let start = 1 << codes.len();
-    input
-        .lines()
-        .filter(|v| &v[23..24] == "0")
-        .map(|v| &v[6..8])
-        .enumerate()
-        .for_each(|(i, v)| {
-            codes.insert(v, i as u32 + start);
-        });
-
-    let cave: HashMap<u32, (i32, Vec<u32>)> = input
         .lines()
         .map(|v| {
-            let s = v.split(';').collect::<Vec<&str>>();
-            let name = *codes.get(&s[0][6..8]).unwrap();
-            let rate = s[0][23..].parse::<i32>().unwrap();
-            let nexts = s[1]
-                .split([' ', ','])
+            let s: Vec<&str> = v
+                .split([' ', '=', ';', ','])
                 .filter(|v| !v.is_empty())
-                .enumerate()
-                .filter(|&(i, _)| i >= 4)
-                .map(|(_, v)| *codes.get(v).unwrap())
-                .collect::<Vec<u32>>();
-            (name, (rate, nexts))
+                .collect();
+            (s[1], s[5].parse().unwrap(), s[10..].to_vec())
         })
-        .collect();
-
-    (codes, cave)
+        .collect()
 }
 
-fn explore(
-    minute: usize,
-    start: u32,
-    cave: &HashMap<u32, (i32, Vec<u32>)>,
-) -> i32 {
-    // (valve, opened) -> released
-    let mut visited: HashMap<(u32, u32), i32> = HashMap::new();
-    // (valve, opened, pressure, released)
-    let mut prev: Vec<(u32, u32, i32, i32)> = vec![(start, 0, 0, 0)];
+fn build_graph(valves: &[(&str, i32, Vec<&str>)]) -> Vec<Vec<Option<i32>>> {
+    // name to index
+    let map: HashMap<&str, usize> = valves
+        .iter()
+        .enumerate()
+        .map(|(i, (v, _, _))| (*v, i))
+        .collect();
 
-    for _ in 0..minute {
-        let mut curr: Vec<(u32, u32, i32, i32)> = Vec::new();
-        fn push(
-            curr: &mut Vec<(u32, u32, i32, i32)>,
-            visited: &mut HashMap<(u32, u32), i32>,
-            valve: u32,
-            opened: u32,
-            pressure: i32,
-            released: i32,
-        ) {
-            match visited.get(&(valve, opened)) {
-                Some(v) if *v >= released => {}
-                _ => {
-                    curr.push((valve, opened, pressure, released));
-                    visited.insert((valve, opened), released);
-                }
+    let n = valves.len();
+    let mut graph: Vec<Vec<Option<i32>>> = vec![vec![None; n]; n];
+    for (a, _, _) in valves.iter() {
+        let a = *(map.get(a).unwrap());
+        let mut queue: VecDeque<(i32, usize)> = VecDeque::new();
+        queue.push_back((0, a));
+        while let Some((distance, b)) = queue.pop_front() {
+            if graph[a][b].is_some() {
+                continue;
+            }
+            graph[a][b] = Some(distance);
+            let (_, _, neighbors) = &valves[b];
+            for neighbor in neighbors {
+                let neighbor = *(map.get(neighbor).unwrap());
+                queue.push_back((distance + 1, neighbor));
             }
         }
-
-        for (valve, opened, pressure, released) in prev.into_iter() {
-            let (rate, nexts) = cave.get(&valve).unwrap();
-            let released = released + pressure;
-
-            // open valve
-            if *rate > 0 && (opened & valve == 0) {
-                push(
-                    &mut curr,
-                    &mut visited,
-                    valve,
-                    opened | valve,
-                    pressure + *rate,
-                    released,
-                );
-            }
-
-            // stay
-            visited.insert((valve, opened), released);
-
-            // move to next
-            for next in nexts.into_iter() {
-                push(
-                    &mut curr,
-                    &mut visited,
-                    *next,
-                    opened,
-                    pressure,
-                    released,
-                );
-            }
-        }
-        prev = curr;
-        // let max = prev.iter().map(|(_, _, _, v)| *v).max().unwrap();
-        // println!("{}: {}", i + 1, max);
     }
-    prev.iter().map(|(_, _, _, v)| *v).max().unwrap()
+    graph
 }
 
 pub fn part_one(input: &str) -> i32 {
-    let (codes, cave) = parse_input(input);
-    let start = *codes.get("AA").unwrap();
-    explore(30, start, &cave)
+    const START: &str = "AA";
+    const MINUTES: i32 = 30;
+
+    // name, rate, neighbors
+    let valves = parse_input(input);
+
+    // graph - the distance from a valve to another
+    let graph = build_graph(&valves);
+
+    // valves has rate (valve_id, valve_mask, rate)
+    let nexts: Vec<(usize, u64, i32)> = valves
+        .iter()
+        .enumerate()
+        .filter(|(_, (_, rate, _))| *rate > 0)
+        .map(|(i, (_, rate, _))| (i, *rate))
+        .enumerate()
+        .map(|(i, (id, rate))| (id, 1 << i, rate))
+        .collect();
+
+    // (estimated, valve, opened, time)
+    let mut queue: Vec<(i32, usize, u64, i32)> = Vec::new();
+    let start = valves
+        .iter()
+        .enumerate()
+        .find(|(_, (name, _, _))| name == &START)
+        .map(|(i, _)| i)
+        .unwrap();
+
+    queue.push((0, start, 0, 0));
+
+    let mut max = 0;
+    while let Some((estimated, valve, opened, time)) = queue.pop() {
+        if estimated > max {
+            max = estimated;
+        }
+
+        if time >= 30 {
+            continue;
+        }
+
+        for &(next_id, next_mask, next_rate) in
+            nexts.iter().filter(|(_, v, _)| opened & v == 0)
+        {
+            if let Some(distance) = graph[valve][next_id] {
+                let time = (time + distance + 1).min(MINUTES);
+                let estimated = estimated + next_rate * (MINUTES - time);
+                queue.push((estimated, next_id, opened | next_mask, time));
+            }
+        }
+    }
+    max
 }
 
 pub fn part_two(input: &str) -> i32 {
