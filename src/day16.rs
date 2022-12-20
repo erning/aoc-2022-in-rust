@@ -43,10 +43,7 @@ fn build_graph(valves: &[(&str, i32, Vec<&str>)]) -> Vec<Vec<Option<i32>>> {
     graph
 }
 
-pub fn part_one(input: &str) -> i32 {
-    const START: &str = "AA";
-    const MINUTES: i32 = 30;
-
+fn explore(input: &str, start: &str, workers: usize, minutes: i32) -> i32 {
     // name, rate, neighbors
     let valves = parse_input(input);
 
@@ -63,42 +60,64 @@ pub fn part_one(input: &str) -> i32 {
         .map(|(i, (id, rate))| (id, 1 << i, rate))
         .collect();
 
-    // (estimated, valve, opened, time)
-    let mut queue: Vec<(i32, usize, u64, i32)> = Vec::new();
     let start = valves
         .iter()
         .enumerate()
-        .find(|(_, (name, _, _))| name == &START)
+        .find(|(_, (name, _, _))| *name == start)
         .map(|(i, _)| i)
         .unwrap();
 
-    queue.push((0, start, 0, 0));
-
     let mut max = 0;
-    while let Some((estimated, valve, opened, time)) = queue.pop() {
-        if estimated > max {
-            max = estimated;
-        }
+    dfs(
+        vec![(start, minutes); workers],
+        0,
+        0,
+        0,
+        &graph,
+        &nexts,
+        &mut max,
+    );
 
-        if time >= 30 {
-            continue;
+    fn dfs(
+        ids: Vec<(usize, i32)>,
+        idx: usize,
+        opened: u64,
+        estimated: i32,
+        graph: &Vec<Vec<Option<i32>>>,
+        nexts: &Vec<(usize, u64, i32)>,
+        max: &mut i32,
+    ) {
+        if estimated > *max {
+            *max = estimated;
         }
-
+        let (id, time) = ids[idx];
+        if time <= 0 {
+            return;
+        }
         for &(next_id, next_mask, next_rate) in
             nexts.iter().filter(|(_, v, _)| opened & v == 0)
         {
-            if let Some(distance) = graph[valve][next_id] {
-                let time = (time + distance + 1).min(MINUTES);
-                let estimated = estimated + next_rate * (MINUTES - time);
-                queue.push((estimated, next_id, opened | next_mask, time));
+            if let Some(distance) = graph[id][next_id] {
+                let opened = opened | next_mask;
+                let time = (time - distance - 1).max(0);
+                let estimated = estimated + next_rate * time;
+                let mut ids = ids.clone();
+                ids[idx] = (next_id, time);
+                let idx = (idx + 1) % ids.len();
+                dfs(ids, idx, opened, estimated, graph, nexts, max);
             }
         }
     }
+
     max
 }
 
+pub fn part_one(input: &str) -> i32 {
+    explore(input, "AA", 1, 30)
+}
+
 pub fn part_two(input: &str) -> i32 {
-    -1
+    explore(input, "AA", 2, 26)
 }
 
 #[cfg(test)]
