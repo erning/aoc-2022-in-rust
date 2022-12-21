@@ -43,7 +43,7 @@ fn build_graph(valves: &[(&str, i32, Vec<&str>)]) -> Vec<Vec<Option<i32>>> {
     graph
 }
 
-fn explore(input: &str, start: &str, workers: usize, minutes: i32) -> i32 {
+fn explore(input: &str, start: &[&str], minutes: i32) -> i32 {
     // name, rate, neighbors
     let valves = parse_input(input);
 
@@ -60,23 +60,23 @@ fn explore(input: &str, start: &str, workers: usize, minutes: i32) -> i32 {
         .map(|(i, (id, rate))| (id, 1 << i, rate))
         .collect();
 
-    let start = valves
+    let start: Vec<(usize, i32)> = start
         .iter()
-        .enumerate()
-        .find(|(_, (name, _, _))| *name == start)
-        .map(|(i, _)| i)
-        .unwrap();
+        .map(|start| {
+            (
+                valves
+                    .iter()
+                    .enumerate()
+                    .find(|(_, (name, _, _))| name == start)
+                    .map(|(i, _)| i)
+                    .unwrap(),
+                minutes,
+            )
+        })
+        .collect();
 
     let mut max = 0;
-    dfs(
-        vec![(start, minutes); workers],
-        0,
-        0,
-        0,
-        &graph,
-        &nexts,
-        &mut max,
-    );
+    dfs(start, 0, 0, 0, &graph, &nexts, &mut max);
 
     fn dfs(
         ids: Vec<(usize, i32)>,
@@ -94,9 +94,10 @@ fn explore(input: &str, start: &str, workers: usize, minutes: i32) -> i32 {
         if time <= 0 {
             return;
         }
-        for &(next_id, next_mask, next_rate) in
-            nexts.iter().filter(|(_, v, _)| opened & v == 0)
-        {
+        for &(next_id, next_mask, next_rate) in nexts.iter() {
+            if opened & next_mask != 0 {
+                continue;
+            }
             if let Some(distance) = graph[id][next_id] {
                 let opened = opened | next_mask;
                 let time = (time - distance - 1).max(0);
@@ -113,11 +114,11 @@ fn explore(input: &str, start: &str, workers: usize, minutes: i32) -> i32 {
 }
 
 pub fn part_one(input: &str) -> i32 {
-    explore(input, "AA", 1, 30)
+    explore(input, &["AA"], 30)
 }
 
 pub fn part_two(input: &str) -> i32 {
-    explore(input, "AA", 2, 26)
+    explore(input, &["AA"; 2], 26)
 }
 
 #[cfg(test)]

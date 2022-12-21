@@ -68,4 +68,8 @@ Part Two: 27625
 --- Day 15: Beacon Exclusion Zone ---
 Part One: 5832528
 Part Two: 13360899249595
+
+--- Day 16: Proboscidea Volcanium ---
+Part One: 1720
+Part Two: 2582
 ```
