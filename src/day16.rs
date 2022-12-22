@@ -75,8 +75,10 @@ fn explore(input: &str, start: &[&str], minutes: i32) -> i32 {
         })
         .collect();
 
+    let mut visited: HashMap<(Vec<usize>, u64), i32> = HashMap::new();
+
     let mut max = 0;
-    dfs(start, 0, 0, 0, &graph, &nexts, &mut max);
+    dfs(start, 0, 0, 0, &graph, &nexts, &mut visited, &mut max);
 
     fn dfs(
         ids: Vec<(usize, i32)>,
@@ -85,6 +87,7 @@ fn explore(input: &str, start: &[&str], minutes: i32) -> i32 {
         estimated: i32,
         graph: &Vec<Vec<Option<i32>>>,
         nexts: &Vec<(usize, u64, i32)>,
+        visited: &mut HashMap<(Vec<usize>, u64), i32>,
         max: &mut i32,
     ) {
         if estimated > *max {
@@ -94,6 +97,20 @@ fn explore(input: &str, start: &[&str], minutes: i32) -> i32 {
         if time <= 0 {
             return;
         }
+
+        let mut k: Vec<usize> = ids.iter().map(|(v, _)| *v).collect();
+        k.sort_unstable();
+        let k: (Vec<usize>, u64) = (k, opened);
+        if let Some(e) = visited.get_mut(&k) {
+            if estimated > *e {
+                *e = estimated;
+            } else {
+                return;
+            }
+        } else {
+            visited.insert(k, estimated);
+        }
+
         for &(next_id, next_mask, next_rate) in nexts.iter() {
             if opened & next_mask != 0 {
                 continue;
@@ -105,7 +122,7 @@ fn explore(input: &str, start: &[&str], minutes: i32) -> i32 {
                 let mut ids = ids.clone();
                 ids[idx] = (next_id, time);
                 let idx = (idx + 1) % ids.len();
-                dfs(ids, idx, opened, estimated, graph, nexts, max);
+                dfs(ids, idx, opened, estimated, graph, nexts, visited, max);
             }
         }
     }
