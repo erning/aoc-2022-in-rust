@@ -49,20 +49,21 @@ fn main() {
     }
 
     for day in days {
-        let bt = SystemTime::now();
-
         let (title, part1, part2) = &puzzles[day - 1];
         let input = aoc::read_as_string(day as u8, filename);
         let input = input.as_str();
 
         println!("--- Day {}: {} ---", day, title);
+        let t0 = SystemTime::now();
         println!("Part One: {}", part1(input));
+        let t1 = SystemTime::now();
         println!("Part Two: {}", part2(input));
+        let t2 = SystemTime::now();
 
         if show_time {
-            let et = SystemTime::now();
-            let duration = et.duration_since(bt).unwrap_or_default();
-            println!("Duration: {:?}", duration);
+            let d1 = t1.duration_since(t0).unwrap_or_default();
+            let d2 = t2.duration_since(t1).unwrap_or_default();
+            println!("Duration: {:?}", (d1, d2));
         }
         println!();
     }
