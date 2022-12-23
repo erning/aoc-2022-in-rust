@@ -75,11 +75,7 @@ fn explore(input: &str, start: &[&str], minutes: i32) -> i32 {
         })
         .collect();
 
-    let mut visited: HashMap<(Vec<usize>, u64), i32> = HashMap::new();
-
-    let mut max = 0;
-    dfs(start, 0, 0, 0, &graph, &nexts, &mut visited, &mut max);
-
+    #[allow(clippy::too_many_arguments)]
     fn dfs(
         ids: Vec<(usize, i32)>,
         idx: usize,
@@ -127,6 +123,9 @@ fn explore(input: &str, start: &[&str], minutes: i32) -> i32 {
         }
     }
 
+    let mut visited: HashMap<(Vec<usize>, u64), i32> = HashMap::new();
+    let mut max = 0;
+    dfs(start, 0, 0, 0, &graph, &nexts, &mut visited, &mut max);
     max
 }
 
