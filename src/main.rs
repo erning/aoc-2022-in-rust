@@ -34,6 +34,7 @@ fn main() {
         puzzle!(day16, "Proboscidea Volcanium"),
         puzzle!(day17, "Pyroclastic Flow"),
         puzzle!(day18, "Boiling Boulders"),
+        puzzle!(day19, "Not Enough Minerals"),
     ];
 
     let filename = match env::args().find(|a| a == "--example") {
