@@ -101,7 +101,7 @@ fn search(bp: &Blueprint, minute: usize) -> i32 {
             ss.push(ns);
         }
         // nothing to build
-        if (0..3).into_iter().any(|i| s[BOT][i] < effect_robots[i]) {
+        if (0..3).into_iter().all(|i| s[BOT][i] < effect_robots[i]) {
             let mut ns = s;
             (0..4).into_iter().for_each(|i| ns[RES][i] += s[BOT][i]);
             ss.push(ns);
@@ -123,7 +123,7 @@ pub fn part_one(input: &str) -> i32 {
     let (tx, rx) = mpsc::channel();
 
     for (i, bp) in bps.iter().enumerate() {
-        let bp = bp.clone();
+        let bp = *bp;
         let tx = tx.clone();
         thread::spawn(move || {
             let max = search(&bp, 24);
@@ -136,7 +136,7 @@ pub fn part_one(input: &str) -> i32 {
     for (i, v) in rx {
         sum += (i + 1) as i32 * v;
         wait -= 1;
-        if wait <= 0 {
+        if wait == 0 {
             break;
         }
     }
@@ -154,7 +154,7 @@ pub fn part_two(input: &str) -> i32 {
     let (tx, rx) = mpsc::channel();
 
     for bp in bps.iter().take(3) {
-        let bp = bp.clone();
+        let bp = *bp;
         let tx = tx.clone();
         thread::spawn(move || {
             let max = search(&bp, 32);
@@ -162,12 +162,12 @@ pub fn part_two(input: &str) -> i32 {
         });
     }
 
-    let mut wait = 3;
+    let mut wait = 3.min(bps.len());
     let mut ans = 1;
     for v in rx {
         ans *= v;
         wait -= 1;
-        if wait <= 0 {
+        if wait == 0 {
             break;
         }
     }
