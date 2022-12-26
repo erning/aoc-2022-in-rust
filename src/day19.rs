@@ -101,10 +101,7 @@ fn search(bp: &Blueprint, minute: usize) -> i32 {
             ss.push(ns);
         }
         // nothing to build
-        if (0..3)
-            .into_iter()
-            .any(|i| s[BOT][i] < effect_robots[i])
-        {
+        if (0..3).into_iter().any(|i| s[BOT][i] < effect_robots[i]) {
             let mut ns = s;
             (0..4).into_iter().for_each(|i| ns[RES][i] += s[BOT][i]);
             ss.push(ns);
@@ -118,18 +115,65 @@ fn search(bp: &Blueprint, minute: usize) -> i32 {
     max[0]
 }
 
+use std::sync::mpsc;
+use std::thread;
+
 pub fn part_one(input: &str) -> i32 {
     let bps = parse_input(input);
-    bps.iter()
-        .map(|v| search(v, 24))
-        .enumerate()
-        .map(|(i, v)| (i + 1) as i32 * v)
-        .sum()
+    let (tx, rx) = mpsc::channel();
+
+    for (i, bp) in bps.iter().enumerate() {
+        let bp = bp.clone();
+        let tx = tx.clone();
+        thread::spawn(move || {
+            let max = search(&bp, 24);
+            tx.send((i, max)).unwrap();
+        });
+    }
+
+    let mut wait = bps.len();
+    let mut sum = 0;
+    for (i, v) in rx {
+        sum += (i + 1) as i32 * v;
+        wait -= 1;
+        if wait <= 0 {
+            break;
+        }
+    }
+    sum
+
+    // bps.iter()
+    //     .map(|v| search(v, 24))
+    //     .enumerate()
+    //     .map(|(i, v)| (i + 1) as i32 * v)
+    //     .sum()
 }
 
 pub fn part_two(input: &str) -> i32 {
     let bps = parse_input(input);
-    bps.iter().take(3).map(|v| search(v, 32)).product()
+    let (tx, rx) = mpsc::channel();
+
+    for bp in bps.iter().take(3) {
+        let bp = bp.clone();
+        let tx = tx.clone();
+        thread::spawn(move || {
+            let max = search(&bp, 32);
+            tx.send(max).unwrap();
+        });
+    }
+
+    let mut wait = 3;
+    let mut ans = 1;
+    for v in rx {
+        ans *= v;
+        wait -= 1;
+        if wait <= 0 {
+            break;
+        }
+    }
+    ans
+
+    // bps.iter().take(3).map(|v| search(v, 32)).product()
     // let a = search(&bps[0], 32);
     // let b = search(&bps[1], 32);
     // let c = search(&bps[2], 32);
@@ -145,7 +189,7 @@ mod tests {
     fn example() {
         let input = read_example(19);
         assert_eq!(part_one(&input), 33);
-        assert_eq!(part_one(&input), 56 * 62);
+        assert_eq!(part_two(&input), 56 * 62);
         // let bps = parse_input(&input);
         // assert_eq!(search(&bps[0], 32), 56);
         // assert_eq!(search(&bps[1], 32), 62);
