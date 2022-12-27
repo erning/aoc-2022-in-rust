@@ -84,4 +84,8 @@ Part Two: 2458
 --- Day 19: Not Enough Minerals ---
 Part One: 1127
 Part Two: 21546
+
+--- Day 20: Grove Positioning System ---
+Part One: 27726
+Part Two: 4275451658004
 ```
