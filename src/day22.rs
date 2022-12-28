@@ -99,48 +99,20 @@ impl Board {
     }
 
     fn next(&self, x: &mut i32, y: &mut i32, d: i32) -> bool {
-        match d {
-            R => {
-                let (a, b) = self.rows[*y as usize];
-                let nx = if *x == b { a } else { *x + 1 };
-                if self.is_open_tile(nx, *y) {
-                    *x = nx;
-                    true
-                } else {
-                    false
-                }
-            }
-            D => {
-                let (a, b) = self.cols[*x as usize];
-                let ny = if *y == b { a } else { *y + 1 };
-                if self.is_open_tile(*x, ny) {
-                    *y = ny;
-                    true
-                } else {
-                    false
-                }
-            }
-            L => {
-                let (a, b) = self.rows[*y as usize];
-                let nx = if *x == a { b } else { *x - 1 };
-                if self.is_open_tile(nx, *y) {
-                    *x = nx;
-                    true
-                } else {
-                    false
-                }
-            }
-            U => {
-                let (a, b) = self.cols[*x as usize];
-                let ny = if *y == a { b } else { *y - 1 };
-                if self.is_open_tile(*x, ny) {
-                    *y = ny;
-                    true
-                } else {
-                    false
-                }
-            }
+        let (r1, r2) = self.rows[*y as usize];
+        let (c1, c2) = self.cols[*x as usize];
+        let (nx, ny) = match d {
+            R => (if *x == r2 { r1 } else { *x + 1 }, *y),
+            D => (*x, if *y == c2 { c1 } else { *y + 1 }),
+            L => (if *x == r1 { r2 } else { *x - 1 }, *y),
+            U => (*x, if *y == c1 { c2 } else { *y - 1 }),
             _ => panic!(),
+        };
+        if self.is_open_tile(nx, ny) {
+            (*x, *y) = (nx, ny);
+            true
+        } else {
+            false
         }
     }
 
@@ -159,11 +131,28 @@ impl Board {
     }
 }
 
-struct Cube {}
+struct Cube {
+    surfaces: Vec<Vec<Vec<u8>>>,
+}
 
 impl Cube {
     fn new(input: &str) -> Cube {
-        Cube {}
+        let surfaces = vec![Vec::new(); 6];
+        Cube { surfaces }
+    }
+
+    fn next(
+        &self,
+        s: &mut i32,
+        x: &mut i32,
+        y: &mut i32,
+        d: &mut i32,
+    ) -> bool {
+        true
+    }
+
+    fn is_open_tile(&self, s: i32, x: i32, y: i32) -> bool {
+        self.surfaces[s as usize][y as usize][x as usize] == 1
     }
 }
 
@@ -191,8 +180,8 @@ pub fn part_one(input: &str) -> i32 {
 }
 
 pub fn part_two(input: &str) -> i32 {
-    let instructions = parse_input(input);
-    let cube = Cube::new(input);
+    // let instructions = parse_input(input);
+    // let cube = Cube::new(input);
     -1
 }
 
@@ -204,7 +193,7 @@ mod tests {
     #[test]
     fn example() {
         let input = read_example(22);
-        assert_eq!(part_one(&input), 0);
+        assert_eq!(part_one(&input), 6032);
         assert_eq!(part_two(&input), 0);
     }
 }
