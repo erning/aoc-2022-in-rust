@@ -88,4 +88,12 @@ Part Two: 21546
 --- Day 20: Grove Positioning System ---
 Part One: 27726
 Part Two: 4275451658004
+
+--- Day 21: Monkey Math ---
+Part One: 93813115694560
+Part Two: 3910938071092
+
+--- Day 22: Monkey Map ---
+Part One: 97356
+Part Two: 120175
 ```

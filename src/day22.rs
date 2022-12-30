@@ -151,7 +151,7 @@ impl Cube {
             y: i32,
             n: i32,
             t: i32,
-            board: &Vec<Vec<u8>>,
+            board: &[Vec<u8>],
         ) -> Vec<Vec<u8>> {
             let mut surface: Vec<Vec<u8>> = Vec::new();
             match t {
@@ -217,6 +217,7 @@ impl Cube {
         config[CD as usize] = (2, 2, 1);
         config[CR as usize] = (3, 2, 3);
 
+        // hardcode for real input data
         if board.board[0].len() > 16 {
             n = 50;
             config = vec![(0, 0, 0); 6];
@@ -336,12 +337,13 @@ impl Cube {
         self.surfaces[s as usize][y as usize][x as usize] == 1
     }
 
-    fn restore(&self, s: i32, x: i32, y: i32, d: i32) -> (i32, i32, i32) {
+    // to the original coordinate
+    fn absolute(&self, s: i32, x: i32, y: i32, d: i32) -> (i32, i32, i32) {
         let n = self.n;
         let (i, j, t) = self.config[s as usize];
         match t {
             1 => (i * n + x, j * n + y, d),
-            2 => (i * n + n - y - 1, j * n + x, (d + 3) % 4),
+            2 => (i * n + y, j * n + n - x - 1, (d + 3) % 4),
             3 => (i * n + n - y - 1, j * n + x, (d + 1) % 4),
             4 => (i * n + n - x - 1, j * n + n - y - 1, (d + 2) % 4),
             _ => panic!(),
@@ -394,9 +396,7 @@ pub fn part_two(input: &str) -> i32 {
         }
     }
 
-    println!("{:?}", (s, x, y, d));
-    let (x, y, d) = cube.restore(s, x, y, d);
-    println!("{:?}", (x + 1, y + 1, d));
+    let (x, y, d) = cube.absolute(s, x, y, d);
 
     1000 * (y + 1) + 4 * (x + 1) + d
 }
