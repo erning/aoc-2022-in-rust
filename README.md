@@ -96,4 +96,8 @@ Part Two: 3910938071092
 --- Day 22: Monkey Map ---
 Part One: 97356
 Part Two: 120175
+
+--- Day 23: Unstable Diffusion ---
+Part One: 4068
+Part Two: 968
 ```
