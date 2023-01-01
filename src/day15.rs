@@ -62,7 +62,7 @@ fn parse_input(input: &str) -> Vec<(i32, i32, i32)> {
 pub fn part_one(input: &str) -> i32 {
     let sensors = parse_input(input);
 
-    let row = if cfg!(test) { 10 } else { 2000000 };
+    let row = if sensors.len() == 14 { 10 } else { 2000000 };
     let segments = find_segments_at_row(&sensors, row);
     segments.into_iter().map(|(a, b)| b - a).sum()
 }
@@ -70,7 +70,7 @@ pub fn part_one(input: &str) -> i32 {
 pub fn part_two(input: &str) -> i64 {
     let sensors = parse_input(input);
 
-    let range = if cfg!(test) { 20 } else { 4000000 };
+    let range = if sensors.len() == 14 { 20 } else { 4000000 };
     for y in (0..=range).rev() {
         // trick ;-)
         let segments = find_segments_at_row(&sensors, y);
