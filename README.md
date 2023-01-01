@@ -100,4 +100,8 @@ Part Two: 120175
 --- Day 23: Unstable Diffusion ---
 Part One: 4068
 Part Two: 968
+
+--- Day 24: Blizzard Basin ---
+Part One: 288
+Part Two: 861
 ```
