@@ -104,4 +104,8 @@ Part Two: 968
 --- Day 24: Blizzard Basin ---
 Part One: 288
 Part Two: 861
+
+--- Day 25: Full of Hot Air ---
+Part One: 2=-0=1-0012-=-2=0=01
+Part Two: fifty stars
 ```
