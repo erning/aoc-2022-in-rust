@@ -1,35 +1,17 @@
 fn find_marker(input: &str, distinct: usize) -> usize {
-    // fn is_unique(bytes: &[u8]) -> bool {
-    //     let mut unique: [bool; 256] = [false; 256];
-    //     for &c in bytes {
-    //         if unique[c as usize] {
-    //             return false;
-    //         }
-    //         unique[c as usize] = true;
-    //     }
-    //     return true;
-    // }
-    //
-    // for (i, bytes) in input.as_bytes().windows(distinct).enumerate() {
-    //     if is_unique(bytes) {
-    //         return i + distinct;
-    //     }
-    // }
-
     let mut a = 0;
     let mut b = 0;
-    let mut unique: [bool; 256] = [false; 256];
+    let mut occupied = [false; 256];
 
     let bytes = input.as_bytes();
     while b < bytes.len() && b - a < distinct {
         let c = bytes[b] as usize;
-        if unique[c] {
-            let c = bytes[a] as usize;
-            unique[c] = false;
+        if occupied[c] {
+            occupied[bytes[a] as usize] = false;
             a += 1;
             continue;
         }
-        unique[c] = true;
+        occupied[c] = true;
         b += 1;
     }
     b
