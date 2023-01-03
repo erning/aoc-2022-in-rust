@@ -14,49 +14,31 @@ fn parse_input(input: &str) -> Vec<Vec<u8>> {
 }
 
 pub fn part_one(input: &str) -> i32 {
-    let mut sum = 0_i32;
-    let rucksacks = parse_input(input);
-    for rucksack in rucksacks {
-        let mut items: [u8; 52] = [0; 52];
-        let len = rucksack.len() / 2;
-        for v in rucksack[..len].iter() {
-            items[(*v - 1) as usize] += 1;
-        }
-        for v in rucksack[len..].iter() {
-            if items[(*v - 1) as usize] > 0 {
-                sum += *v as i32;
-                break;
-            }
-        }
-    }
-    sum
+    parse_input(input)
+        .iter()
+        .map(|v| {
+            let n = v.len() / 2;
+            let mut occupied = [false; 52];
+            v[..n].iter().for_each(|&i| occupied[i as usize - 1] = true);
+            v[n..].iter().find(|&&i| occupied[i as usize - 1]).unwrap()
+        })
+        .map(|&v| v as i32)
+        .sum()
 }
 
 pub fn part_two(input: &str) -> i32 {
-    let mut sum = 0_i32;
-    let rucksacks = parse_input(input);
-    let mut iter = rucksacks.iter();
-    while let (Some(a), Some(b), Some(c)) =
-        (iter.next(), iter.next(), iter.next())
-    {
-        let mut common_items: [u8; 52] = [0; 52];
-        let mut items: [u8; 52] = [0; 52];
-        for v in a.iter() {
-            items[(*v - 1) as usize] += 1;
-        }
-        for v in b.iter() {
-            if items[(*v - 1) as usize] > 0 {
-                common_items[(*v - 1) as usize] += 1;
-            }
-        }
-        for v in c.iter() {
-            if common_items[(*v - 1) as usize] > 0 {
-                sum += *v as i32;
-                break;
-            }
-        }
-    }
-    sum
+    parse_input(input)
+        .chunks(3)
+        .map(|v| {
+            let mut occupied = [(false, false); 52];
+            v[0].iter().for_each(|&i| occupied[i as usize - 1].0 = true);
+            v[1].iter().for_each(|&i| occupied[i as usize - 1].1 = true);
+            v[2].iter()
+                .find(|&&i| occupied[i as usize - 1] == (true, true))
+                .unwrap()
+        })
+        .map(|&v| v as i32)
+        .sum()
 }
 
 #[cfg(test)]
