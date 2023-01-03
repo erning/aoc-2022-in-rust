@@ -1,16 +1,8 @@
-fn parse_input(input: &str) -> Vec<(u8, u8)> {
+pub fn part_one(input: &str) -> i32 {
     input
         .lines()
         .map(|v| v.as_bytes())
-        .map(|v| (v[0], v[2]))
-        .collect()
-}
-
-pub fn part_one(input: &str) -> u32 {
-    let guide = parse_input(input);
-    guide
-        .into_iter()
-        .map(|(a, b)| match (a, b) {
+        .map(|v| match (v[0], v[2]) {
             (b'A', b'X') => 4, // 1 + 3
             (b'A', b'Y') => 8, // 2 + 6
             (b'A', b'Z') => 3, // 3 + 0
@@ -20,16 +12,16 @@ pub fn part_one(input: &str) -> u32 {
             (b'C', b'X') => 7, // 1 + 6
             (b'C', b'Y') => 2, // 2 + 0
             (b'C', b'Z') => 6, // 3 + 3
-            _ => 0,
+            _ => panic!(),
         })
         .sum()
 }
 
-pub fn part_two(input: &str) -> u32 {
-    let guide = parse_input(input);
-    guide
-        .into_iter()
-        .map(|(a, b)| match (a, b) {
+pub fn part_two(input: &str) -> i32 {
+    input
+        .lines()
+        .map(|v| v.as_bytes())
+        .map(|v| match (v[0], v[2]) {
             (b'A', b'X') => 3, // 3 + 0
             (b'A', b'Y') => 4, // 1 + 3
             (b'A', b'Z') => 8, // 2 + 6
@@ -39,7 +31,7 @@ pub fn part_two(input: &str) -> u32 {
             (b'C', b'X') => 2, // 2 + 0
             (b'C', b'Y') => 6, // 3 + 3
             (b'C', b'Z') => 7, // 1 + 6
-            _ => 0,
+            _ => panic!(),
         })
         .sum()
 }
