@@ -51,11 +51,9 @@ pub fn part_one(input: &str) -> String {
             stacks[b].push(c);
         }
     }
-    let mut ans: Vec<char> = vec![];
-    for stack in stacks.iter() {
-        ans.push(*stack.last().unwrap());
-    }
-    ans.into_iter().collect::<String>()
+    stacks.into_iter().map(|v| {
+        *v.last().unwrap_or(&' ')
+    }).collect()
 }
 
 pub fn part_two(input: &str) -> String {
@@ -66,15 +64,12 @@ pub fn part_two(input: &str) -> String {
             let c = stacks[a].pop().unwrap();
             s.push(c);
         }
-        while let Some(c) = s.pop() {
-            stacks[b].push(c);
-        }
+        s.reverse();
+        stacks[b].append(&mut s);
     }
-    let mut ans: Vec<char> = vec![];
-    for stack in stacks.iter() {
-        ans.push(*stack.last().unwrap());
-    }
-    ans.into_iter().collect::<String>()
+    stacks.into_iter().map(|v| {
+        *v.last().unwrap_or(&' ')
+    }).collect()
 }
 
 #[cfg(test)]
