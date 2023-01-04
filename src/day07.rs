@@ -1,33 +1,33 @@
 use std::collections::HashMap;
 
 fn parse_input(input: &str) -> Vec<(Vec<&str>, &str, usize)> {
-    let mut currdir: Vec<&str> = vec![];
+    let mut cwd: Vec<&str> = vec![];
     let mut fs: HashMap<(Vec<&str>, &str), usize> = HashMap::new();
     fs.insert((vec![], ""), 0);
     for line in input.lines() {
         match line.split_ascii_whitespace().collect::<Vec<&str>>()[..] {
             ["$", "cd", "/"] => {
-                currdir.clear();
+                cwd.clear();
             }
             ["$", "cd", ".."] => {
-                currdir.pop();
+                cwd.pop();
             }
             ["$", "cd", dir] => {
-                currdir.push(dir);
-                fs.insert((currdir.clone(), ""), 0);
+                cwd.push(dir);
+                fs.insert((cwd.clone(), ""), 0);
             }
             ["$", "ls"] => {}
-            ["dir", dir] => {
-                let mut newdir = currdir.clone();
-                newdir.push(dir);
-                fs.insert((newdir, ""), 0);
+            ["dir", subdir] => {
+                let mut dir = cwd.clone();
+                dir.push(subdir);
+                fs.insert((dir, ""), 0);
             }
             [size, file] => {
                 let size = size.parse().unwrap();
-                fs.insert((currdir.clone(), file), size);
-                for i in 0..=currdir.len() {
-                    if let Some(v) = fs.get_mut(&(currdir[..i].to_vec(), ""))
-                    {
+                fs.insert((cwd.clone(), file), size);
+                for i in 0..=cwd.len() {
+                    let dir = (cwd[..i].to_vec(), "");
+                    if let Some(v) = fs.get_mut(&dir) {
                         *v += size;
                     }
                 }
@@ -43,21 +43,21 @@ fn parse_input(input: &str) -> Vec<(Vec<&str>, &str, usize)> {
 pub fn part_one(input: &str) -> usize {
     let fs = parse_input(input);
     fs.iter()
-        .filter(|(_, file, size)| file.is_empty() && size <= &100000)
+        .filter(|(_, file, size)| file.is_empty() && size <= &100_000)
         .map(|(_, _, size)| *size)
         .sum()
 }
 
 pub fn part_two(input: &str) -> usize {
     let fs = parse_input(input);
-    let unused: usize = 70000000
+    let unused: usize = 70_000_000
         - fs.iter()
             .find(|(dir, file, _)| dir.is_empty() && file.is_empty())
             .map(|(_, _, size)| size)
             .unwrap();
     fs.iter()
         .filter(|(_, file, size)| {
-            file.is_empty() && unused + size >= 30000000
+            file.is_empty() && unused + size >= 30_000_000
         })
         .map(|(_, _, size)| *size)
         .min()
