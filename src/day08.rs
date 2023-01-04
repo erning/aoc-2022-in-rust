@@ -13,7 +13,7 @@ pub fn part_one(input: &str) -> usize {
             if (0..i).all(|p| grid[p][j] < v)
                 || ((i + 1)..h).all(|p| grid[p][j] < v)
                 || (0..j).all(|p| grid[i][p] < v)
-                || ((j + 1)..h).all(|p| grid[i][p] < v)
+                || ((j + 1)..w).all(|p| grid[i][p] < v)
             {
                 count += 1;
             }
