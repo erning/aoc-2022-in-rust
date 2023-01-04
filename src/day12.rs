@@ -1,14 +1,10 @@
 use std::collections::HashSet;
 use std::collections::VecDeque;
 
-#[derive(Debug)]
-struct ParsedInput {
-    heightmap: Vec<Vec<u8>>,
-    start: (usize, usize),
-    end: (usize, usize),
-}
+type HeightMap = Vec<Vec<u8>>;
+type Position = (usize, usize);
 
-fn parse_input(input: &str) -> ParsedInput {
+fn parse_input(input: &str) -> (HeightMap, Position, Position) {
     let mut start = (0, 0);
     let mut end = (0, 0);
     let heightmap = input
@@ -31,24 +27,22 @@ fn parse_input(input: &str) -> ParsedInput {
                 .collect()
         })
         .collect();
-    ParsedInput {
-        heightmap,
-        start,
-        end,
-    }
+
+    (heightmap, start, end)
 }
+
 fn search<F1, F2>(
-    heightmap: &Vec<Vec<u8>>,
-    s: (usize, usize),
+    heightmap: &HeightMap,
+    s: Position,
     is_finish: F1,
     is_movable: F2,
 ) -> Option<i32>
 where
-    F1: Fn((usize, usize)) -> bool,
-    F2: Fn((usize, usize), (usize, usize)) -> bool,
+    F1: Fn(Position) -> bool,
+    F2: Fn(Position, Position) -> bool,
 {
-    let mut visited: HashSet<(usize, usize)> = HashSet::new();
-    let mut queue: VecDeque<(i32, (usize, usize))> = VecDeque::new();
+    let mut visited: HashSet<Position> = HashSet::new();
+    let mut queue: VecDeque<(i32, Position)> = VecDeque::new();
     queue.push_back((0, s));
     let h = heightmap.len() as i32;
     let w = heightmap[0].len() as i32;
@@ -77,31 +71,23 @@ where
 }
 
 pub fn part_one(input: &str) -> i32 {
-    let parsed = parse_input(input);
+    let (heightmap, start, end) = parse_input(input);
     search(
-        &parsed.heightmap,
-        parsed.start,
-        |p| p == parsed.end,
-        |f, t| {
-            parsed.heightmap[t.1][t.0] as i32
-                - parsed.heightmap[f.1][f.0] as i32
-                <= 1
-        },
+        &heightmap,
+        start,
+        |p| p == end,
+        |f, t| heightmap[t.1][t.0] as i32 - heightmap[f.1][f.0] as i32 <= 1,
     )
     .unwrap()
 }
 
 pub fn part_two(input: &str) -> i32 {
-    let parsed = parse_input(input);
+    let (heightmap, _, end) = parse_input(input);
     search(
-        &parsed.heightmap,
-        parsed.end,
-        |p| parsed.heightmap[p.1][p.0] == b'a',
-        |f, t| {
-            parsed.heightmap[f.1][f.0] as i32
-                - parsed.heightmap[t.1][t.0] as i32
-                <= 1
-        },
+        &heightmap,
+        end,
+        |p| heightmap[p.1][p.0] == b'a',
+        |f, t| heightmap[f.1][f.0] as i32 - heightmap[t.1][t.0] as i32 <= 1,
     )
     .unwrap()
 }
