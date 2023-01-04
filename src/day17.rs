@@ -134,12 +134,15 @@ fn print_rock(chamber: &[u16]) {
     })
 }
 
-fn emulate(input: &str, n: usize) -> usize {
-    let mut rocks = Rocks::new();
-    let mut patterns = Patterns::new(input);
-
-    let mut chamber = vec![GROUND];
-
+fn simulate<F>(
+    rocks: &mut Rocks,
+    patterns: &mut Patterns,
+    chamber: &mut Vec<u16>,
+    n: usize,
+    mut is_stop: F,
+) where
+    F: FnMut(usize, usize) -> bool,
+{
     for _ in 0..n {
         // initial
         let mut rock = rocks.next();
@@ -151,12 +154,12 @@ fn emulate(input: &str, n: usize) -> usize {
         loop {
             // push
             let pattern = patterns.next();
-            let pushed = push_rock(&mut chamber, floor, &rock, pattern);
+            let pushed = push_rock(chamber, floor, &rock, pattern);
             if let Some(v) = pushed {
                 rock = v;
             }
             // full
-            if !fall_rock(&mut chamber, floor, &rock) {
+            if !fall_rock(chamber, floor, &rock) {
                 break;
             }
             floor -= 1;
@@ -164,77 +167,51 @@ fn emulate(input: &str, n: usize) -> usize {
         while chamber[chamber.len() - 1] == WALL {
             chamber.pop();
         }
+        if is_stop(rocks.index, patterns.index) {
+            break;
+        }
     }
-
-    chamber.len() - 1
 }
 
 pub fn part_one(input: &str) -> usize {
-    emulate(input, 2022)
+    let mut rocks = Rocks::new();
+    let mut patterns = Patterns::new(input);
+    let mut chamber = vec![GROUND];
+    simulate(&mut rocks, &mut patterns, &mut chamber, 2022, |_, _| false);
+    chamber.len() - 1
 }
 
 pub fn part_two(input: &str) -> usize {
+    let x: usize = 1_000_000_000_000;
     let mut rocks = Rocks::new();
     let mut patterns = Patterns::new(input);
-
     let mut chamber = vec![GROUND];
+    let mut n = 0;
 
-    let mut r = 0;
     let mut visited: HashSet<(usize, usize)> = HashSet::new();
-    let mut f1: Option<(usize, usize)> = None;
-    let mut f2: Option<(usize, usize)> = None;
-    loop {
-        // initial
-        let mut rock = rocks.next();
-        chamber.append(&mut vec![WALL; rock.len() + 3]);
-        let mut floor = chamber.len();
-        for (i, v) in rock.iter().enumerate() {
-            chamber[floor - rock.len() + i] |= *v;
-        }
-        loop {
-            // push
-            let pattern = patterns.next();
-            let pushed = push_rock(&mut chamber, floor, &rock, pattern);
-            if let Some(v) = pushed {
-                rock = v;
-            }
-            // fall
-            if !fall_rock(&mut chamber, floor, &rock) {
-                break;
-            }
-            floor -= 1;
-        }
-        while chamber[chamber.len() - 1] == WALL {
-            chamber.pop();
-        }
-        r += 1;
-        match (f1, f2) {
-            (None, _) => {
-                if !visited.insert((rocks.index, patterns.index)) {
-                    f1 = Some((r, chamber.len() - 1));
-                    visited.clear();
-                    visited.insert((rocks.index, patterns.index));
-                }
-            }
-            (_, None) => {
-                if !visited.insert((rocks.index, patterns.index)) {
-                    f2 = Some((r, chamber.len() - 1));
-                    visited.clear();
-                    break;
-                }
-            }
-            _ => break,
-        }
-    }
+    simulate(&mut rocks, &mut patterns, &mut chamber, x - n, |ri, pi| {
+        n += 1;
+        !visited.insert((ri, pi))
+    });
+    let f1 = (n, chamber.len() - 1);
 
-    let x: usize = 1000000000000;
-    let (f1, f2) = (f1.unwrap(), f2.unwrap());
+    visited.clear();
+    visited.insert((rocks.index, patterns.index));
+    simulate(&mut rocks, &mut patterns, &mut chamber, x - n, |ri, pi| {
+        n += 1;
+        !visited.insert((ri, pi))
+    });
+    let f2 = (n, chamber.len() - 1);
+
+    let m = (x - f1.0) % (f2.0 - f1.0);
+    simulate(&mut rocks, &mut patterns, &mut chamber, m, |_, _| false);
+    let f3 = (n, chamber.len() - 1);
 
     // a ... [b,b,b] ... c
     let a = f1.1;
     let b = (x - f1.0) / (f2.0 - f1.0) * (f2.1 - f1.1);
-    let m = (x - f1.0) % (f2.0 - f1.0);
-    let c = emulate(input, f1.0 + m) - f1.1;
+    let c = f3.1 - f2.1;
+
     a + b + c
 }
 
