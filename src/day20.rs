@@ -1,16 +1,17 @@
-fn parse_input(input: &str) -> Vec<(i64, usize, usize)> {
-    // (value, prev-index, next-index)
+// (value, prev-index, next-index)
+type List = Vec<(i64, usize, usize)>;
+
+fn parse_input(input: &str) -> List {
     let n = input.lines().count();
     input
         .lines()
-        .map(|v| v.parse::<i64>().unwrap())
         .enumerate()
-        .map(|(i, v)| (v, (n + i - 1) % n, (i + 1) % n))
+        .map(|(i, v)| (v.parse().unwrap(), (n + i - 1) % n, (i + 1) % n))
         .collect()
 }
 
 #[allow(dead_code)]
-fn show_list(list: &Vec<(i64, usize, usize)>, i: usize) {
+fn show_list(list: &List, i: usize) {
     let n = list.len();
     let mut i = i % n;
     for _ in 0..n {
@@ -20,7 +21,8 @@ fn show_list(list: &Vec<(i64, usize, usize)>, i: usize) {
     println!();
 }
 
-fn mix(list: &mut Vec<(i64, usize, usize)>) -> usize {
+// do the mix operation and return the index of zero
+fn mix(list: &mut List) -> usize {
     let n = list.len();
     let mut zero = n;
     for i in 0..n {
@@ -29,26 +31,20 @@ fn mix(list: &mut Vec<(i64, usize, usize)>) -> usize {
             zero = i;
             continue;
         }
-        // minus one to skip the removed current node
+        // remove from list
+        list[a].2 = b;
+        list[b].1 = a;
+        // minus one to skip the removed node
         let m = v % (n as i64 - 1);
         if m == 0 {
             continue;
         }
-
-        // remove from list
-        list[a].2 = b;
-        list[b].1 = a;
         // move m steps
-        let mut j = i;
-        if v < 0 {
-            for _ in 0..1 - m {
-                j = list[j].1
-            }
+        let j = if v < 0 {
+            (0..1 - m).fold(i, |k, _| list[k].1)
         } else {
-            for _ in 0..m {
-                j = list[j].2;
-            }
-        }
+            (0..m).fold(i, |k, _| list[k].2)
+        };
         // insert after j
         let (_, _, b) = list[j];
         list[b].1 = i;
@@ -59,17 +55,18 @@ fn mix(list: &mut Vec<(i64, usize, usize)>) -> usize {
     zero
 }
 
+// sum the values of 1000th, 2000th, and 3000th numbers after the value 0
+fn final_sum(list: &List, mut i: usize) -> i64 {
+    (0..3).fold(0, |sum, _| {
+        i = (0..1000).fold(i, |j, _| list[j].2);
+        sum + list[i].0
+    })
+}
+
 pub fn part_one(input: &str) -> i64 {
     let mut list = parse_input(input);
-    let mut i = mix(&mut list);
-    let mut sum = 0;
-    for _ in 0..3 {
-        for _ in 0..1000 {
-            i = list[i].2;
-        }
-        sum += list[i].0;
-    }
-    sum
+    let i = mix(&mut list);
+    final_sum(&list, i)
 }
 
 pub fn part_two(input: &str) -> i64 {
@@ -81,15 +78,8 @@ pub fn part_two(input: &str) -> i64 {
     for _ in 0..9 {
         mix(&mut list);
     }
-    let mut i = mix(&mut list);
-    let mut sum = 0;
-    for _ in 0..3 {
-        for _ in 0..1000 {
-            i = list[i].2;
-        }
-        sum += list[i].0;
-    }
-    sum
+    let i = mix(&mut list);
+    final_sum(&list, i)
 }
 
 #[cfg(test)]
