@@ -1,4 +1,7 @@
-fn parse_input(input: &str) -> Vec<i32> {
+fn parse_instructions(input: &str) -> Vec<i32> {
+    // -1: turn right
+    // -3: turn left
+    // positive: moving steps
     let mut instructions: Vec<i32> = Vec::new();
     let mut value = 0;
     for c in input.lines().last().unwrap().chars() {
@@ -206,28 +209,45 @@ impl Cube {
         }
 
         let board = Board::new(input);
-
-        let mut n = 4;
-        let mut config = vec![(0, 0, 0); 6];
-
-        config[CU as usize] = (2, 0, 1);
-        config[CB as usize] = (0, 1, 4);
-        config[CL as usize] = (1, 1, 1);
-        config[CF as usize] = (2, 1, 1);
-        config[CD as usize] = (2, 2, 1);
-        config[CR as usize] = (3, 2, 3);
-
-        // hardcode for real input data
-        if board.board[0].len() > 16 {
-            n = 50;
-            config = vec![(0, 0, 0); 6];
+        // (x, y): surface location
+        //   0 1 2 3
+        // 0 . . . .
+        // 1 . . . .
+        // 2 . . . .
+        // 3 . . . .
+        //
+        // t: rotation type to the standard form
+        //   - 1 origin
+        //   - 2: clockwise
+        //   - 3: anti-clockwise
+        //   - 4: rotate 180 degree
+        //
+        // standard form:
+        //   UU
+        // LLFFRR
+        //   DD
+        //   BB
+        let (n, config) = if board.board[0].len() == 16 {
+            // example data
+            let mut config = vec![(0, 0, 0); 6];
+            config[CU as usize] = (2, 0, 1);
+            config[CB as usize] = (0, 1, 4);
+            config[CL as usize] = (1, 1, 1);
+            config[CF as usize] = (2, 1, 1);
+            config[CD as usize] = (2, 2, 1);
+            config[CR as usize] = (3, 2, 3);
+            (4, config)
+        } else {
+            // hardcode for real input data
+            let mut config = vec![(0, 0, 0); 6];
             config[CU as usize] = (1, 0, 1);
             config[CR as usize] = (2, 0, 2);
             config[CF as usize] = (1, 1, 1);
             config[CL as usize] = (0, 2, 2);
             config[CD as usize] = (1, 2, 1);
             config[CB as usize] = (0, 3, 3);
-        }
+            (50, config)
+        };
 
         let mut surfaces = vec![Vec::new(); 6];
         for (i, &(x, y, t)) in config.iter().enumerate() {
@@ -243,10 +263,10 @@ impl Cube {
 
     fn next(
         &self,
-        s: &mut i32,
-        x: &mut i32,
+        s: &mut i32, // which surface,
+        x: &mut i32, // (x, y) relative position within the surface
         y: &mut i32,
-        d: &mut i32,
+        d: &mut i32, // moving direction
     ) -> bool {
         let n = self.surfaces[0][0].len() as i32 - 1;
 
@@ -268,25 +288,11 @@ impl Cube {
             };
         }
 
-        // cross surfaces
-
-        // standard:
-        //     UUUU
-        //     UUUU
-        //     UUUU
-        //     UUUU
-        // LLLLFFFFRRRR
-        // LLLLFFFFRRRR
-        // LLLLFFFFRRRR
-        // LLLLFFFFRRRR
-        //     DDDD
-        //     DDDD
-        //     DDDD
-        //     DDDD
-        //     BBBB
-        //     BBBB
-        //     BBBB
-        //     BBBB
+        // moving cross surfaces, standard form:
+        //   UU
+        // LLFFRR
+        //   DD
+        //   BB
 
         let (ns, nd, nx, ny) = match (*s, *d) {
             (CU, R) => (CR, D, n - *y, 0),
@@ -352,19 +358,20 @@ impl Cube {
 }
 
 pub fn part_one(input: &str) -> i32 {
-    let instructions = parse_input(input);
+    let instructions = parse_instructions(input);
     let board = Board::new(input);
     let (mut x, mut y) = (board.edge(0, 0, L), 0);
     let mut d = R;
 
     for i in instructions.into_iter() {
-        if i > 0 {
+        if i >= 0 {
             for _ in 0..i {
                 if !board.next(&mut x, &mut y, d) {
                     break;
                 }
             }
         } else {
+            // turn right or left and avoid negative
             d += i + 2;
             d += 4;
             d %= 4;
@@ -375,15 +382,13 @@ pub fn part_one(input: &str) -> i32 {
 }
 
 pub fn part_two(input: &str) -> i32 {
-    let instructions = parse_input(input);
+    let instructions = parse_instructions(input);
     let cube = Cube::new(input);
-    // cube.surfaces[CR as usize].iter().for_each(|v| println!("{:?}", v));
-
     let (mut s, mut x, mut y) = (CU, 0, 0);
     let mut d = R;
 
     for i in instructions.into_iter() {
-        if i > 0 {
+        if i >= 0 {
             for _ in 0..i {
                 if !cube.next(&mut s, &mut x, &mut y, &mut d) {
                     break;
@@ -397,7 +402,6 @@ pub fn part_two(input: &str) -> i32 {
     }
 
     let (x, y, d) = cube.absolute(s, x, y, d);
-
     1000 * (y + 1) + 4 * (x + 1) + d
 }
 
