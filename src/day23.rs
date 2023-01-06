@@ -95,12 +95,11 @@ fn propose_moves(elves: &[(i32, i32)], dir: i32) -> Vec<(usize, i32, i32)> {
                     }
                 });
                 match next {
-                    Some(_) => next,
-                    None => Some((i, x, y)),
+                    Some(_) => next,         // move to next position
+                    None => Some((i, x, y)), // stay
                 }
             } else {
-                // (i, x, y)
-                None
+                None // do nothing
             }
         })
         .collect()
