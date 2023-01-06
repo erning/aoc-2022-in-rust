@@ -17,8 +17,8 @@ fn to_decimal(snafu: &str) -> i64 {
         .unwrap()
 }
 
-fn from_decimal(mut value: i64) -> String {
-    let mut snafu: Vec<char> = Vec::new();
+fn to_snafu(mut value: i64) -> String {
+    let mut snafu = String::new();
     while value > 0 {
         snafu.push(match (value + 2) % 5 - 2 {
             2 => '2',
@@ -30,13 +30,13 @@ fn from_decimal(mut value: i64) -> String {
         });
         value = (value + 2) / 5;
     }
-    String::from_iter(snafu.into_iter().rev())
+    snafu.chars().rev().collect()
 }
 
 pub fn part_one(input: &str) -> String {
     let nums = parse_input(input);
     let sum = nums.into_iter().sum();
-    from_decimal(sum)
+    to_snafu(sum)
 }
 
 pub fn part_two(_: &str) -> String {
