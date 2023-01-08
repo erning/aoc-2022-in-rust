@@ -1,23 +1,15 @@
 use std::collections::BinaryHeap;
+use std::collections::HashSet;
 
 const ORE: usize = 0;
 const CLAY: usize = 1;
 const OBSIDIAN: usize = 2;
 const GEODE: usize = 3;
 
-const BOT: usize = 0;
-const RES: usize = 1;
-
-type Blueprint = [i32; 6];
-type Status = [[i32; 4]; 2];
+type Blueprint = [Vec<(usize, i32)>; 4];
+type Status = (i32, [i32; 4], [i32; 4]);
 
 fn parse_input(input: &str) -> Vec<Blueprint> {
-    // 0 - number of ore cost by ore robot
-    // 1 - number of ore cost by clay robot
-    // 2 - number of ore cost by obsidian robot
-    // 3 - number of clay cost by obsidian robot
-    // 4 - number of ore cost by geode robot
-    // 5 - number of obsidian cost by geode robot
     input
         .lines()
         .map(|v| {
@@ -25,92 +17,119 @@ fn parse_input(input: &str) -> Vec<Blueprint> {
                 .filter_map(|v| v.parse::<i32>().ok())
                 .collect::<Vec<i32>>()
         })
-        .map(|v| v.try_into().unwrap())
+        .map(|v| {
+            // 0 - number of ore cost by ore robot
+            // 1 - number of ore cost by clay robot
+            // 2 - number of ore cost by obsidian robot
+            // 3 - number of clay cost by obsidian robot
+            // 4 - number of ore cost by geode robot
+            // 5 - number of obsidian cost by geode robot
+            [
+                vec![(ORE, v[0])],                   // for ore
+                vec![(ORE, v[1])],                   // for clay
+                vec![(ORE, v[2]), (CLAY, v[3])],     // for obsidian
+                vec![(ORE, v[4]), (OBSIDIAN, v[5])], // for geode
+            ]
+        })
         .collect()
 }
 
 fn heuristic(s: Status) -> i32 {
-    s[BOT][GEODE] * 1000
-        + s[BOT][OBSIDIAN] * 100
-        + s[BOT][CLAY] * 10
-        + s[BOT][ORE]
+    s.1[GEODE] + s.2[GEODE]
+    // s.1[GEODE] * 1000 + s.1[OBSIDIAN] * 100 + s.1[CLAY] * 10 + s.1[ORE]
 }
 
 fn search(bp: &Blueprint, minute: usize) -> i32 {
-    let effect_robots =
-        [bp[0].max(bp[1]).max(bp[2]).max(bp[4]), bp[3], bp[5]];
-    // println!("Blueprint: {:?}", bp);
-    // println!("effect_robots: {:?}", effect_robots);
+    let maxspend = |rtype| {
+        bp.iter()
+            .filter_map(|recipe| {
+                recipe.iter().find(|(i, _)| *i == rtype).map(|(_, v)| *v)
+            })
+            .max()
+            .unwrap()
+    };
+    let maxspend = [maxspend(ORE), maxspend(CLAY), maxspend(OBSIDIAN)];
+    println!("maxspend: {:?}", maxspend);
 
-    let initial: Status = [[1, 0, 0, 0], [0, 0, 0, 0]];
-    let mut queue: BinaryHeap<(i32, usize, Status)> = BinaryHeap::new();
-    queue.push((0, minute, initial));
+    let mut visited: HashSet<Status> = HashSet::new();
+
+    let initial: Status = (minute as i32, [1, 0, 0, 0], [0, 0, 0, 0]);
+    let mut queue: BinaryHeap<(i32, Status)> = BinaryHeap::new();
+    queue.push((0, initial));
 
     let mut max: Vec<i32> = vec![0; minute + 1];
 
-    while let Some((_, time, s)) = queue.pop() {
-        if s[RES][GEODE] > max[time] {
-            max[time] = s[RES][GEODE];
-            // println!("max={:?}, minute={} {:?}", max[time], minute - time, s);
+    let mut c = 0;
+    while let Some((_, status)) = queue.pop() {
+        c += 1;
+        let (time, bots, materials) = status;
+        if materials[GEODE] > max[time as usize] {
+            max[time as usize] = materials[GEODE];
+            println!(
+                "max={:?}, minute={:?}",
+                max[time as usize],
+                minute as i32 - time
+            );
         }
-
-        if max[time] > 0 && s[RES][GEODE] + s[BOT][GEODE] < max[time] {
-            continue;
-        }
-
-        if time == 0 {
-            continue;
-        }
-
-        let mut ss: Vec<Status> = Vec::with_capacity(5);
-        // building ore robot
-        if s[BOT][ORE] < effect_robots[ORE] && s[RES][ORE] >= bp[0] {
-            let mut ns = s;
-            ns[RES][ORE] -= bp[0];
-            ns[BOT][ORE] += 1;
-            (0..4).into_iter().for_each(|i| ns[RES][i] += s[BOT][i]);
-            ss.push(ns);
-        }
-        // building clay robot
-        if s[BOT][CLAY] < effect_robots[CLAY] && s[RES][ORE] >= bp[1] {
-            let mut ns = s;
-            ns[RES][ORE] -= bp[1];
-            ns[BOT][CLAY] += 1;
-            (0..4).into_iter().for_each(|i| ns[RES][i] += s[BOT][i]);
-            ss.push(ns);
-        }
-        // building obsidian robot
-        if s[BOT][OBSIDIAN] < effect_robots[OBSIDIAN]
-            && s[RES][ORE] >= bp[2]
-            && s[RES][CLAY] >= bp[3]
+        // println!("{}: {:?}, {:?}", minute as i32 - time, bots, materials);
+        if max[time as usize] > 0
+            && materials[GEODE] + bots[GEODE] < max[time as usize]
         {
-            let mut ns = s;
-            ns[RES][ORE] -= bp[2];
-            ns[RES][CLAY] -= bp[3];
-            ns[BOT][OBSIDIAN] += 1;
-            (0..4).into_iter().for_each(|i| ns[RES][i] += s[BOT][i]);
-            ss.push(ns);
+            continue;
         }
-        // building geode robot
-        if s[RES][ORE] >= bp[4] && s[RES][OBSIDIAN] >= bp[5] {
-            let mut ns = s;
-            ns[RES][ORE] -= bp[4];
-            ns[RES][OBSIDIAN] -= bp[5];
-            ns[BOT][GEODE] += 1;
-            (0..4).into_iter().for_each(|i| ns[RES][i] += s[BOT][i]);
-            ss.push(ns);
+
+        if time <= 0 {
+            // TODO: the max
+            continue;
         }
-        // nothing to build
-        if (0..3).into_iter().all(|i| s[BOT][i] < effect_robots[i]) {
-            let mut ns = s;
-            (0..4).into_iter().for_each(|i| ns[RES][i] += s[BOT][i]);
-            ss.push(ns);
+
+        if !visited.insert(status) {
+            continue;
         }
-        // enqueue
-        ss.into_iter().for_each(|v| {
-            queue.push((heuristic(v), time - 1, v));
-        })
+
+        for (btype, recipe) in bp.iter().enumerate() {
+            if btype != 3 && bots[btype] >= maxspend[btype] {
+                continue;
+            }
+            if recipe.iter().any(|&(i, _)| bots[i] == 0) {
+                continue;
+            }
+            let wait = recipe
+                .iter()
+                .map(|&(rtype, amount)| {
+                    (amount - materials[rtype], bots[rtype])
+                })
+                .map(|(a, b)| {
+                    (a + b - 1) / b // ceil(a/b)
+                })
+                .max()
+                .unwrap()
+                .max(0);
+            // println!("wait={:?}", (btype, wait));
+
+            let ntime = time - wait - 1;
+            if ntime < 0 {
+                // println!("ntime={}", ntime);
+                continue;
+            }
+
+            let mut nbots = bots;
+            nbots[btype] += 1;
+            let mut nmaterials = materials;
+            nmaterials.iter_mut().enumerate().for_each(|(i, v)| {
+                *v += bots[i] * (wait + 1);
+            });
+            recipe.iter().for_each(|&(i, v)| {
+                nmaterials[i] -= v;
+            });
+
+            let nstatus = (ntime, nbots, nmaterials);
+            // println!("new: {:?}", nstatus);
+
+            queue.push((heuristic(nstatus), nstatus));
+        }
     }
+    println!("C={}", c);
 
     max[0]
 }
@@ -119,65 +138,65 @@ use std::sync::mpsc;
 use std::thread;
 
 pub fn part_one(input: &str) -> i32 {
+    // let bps = parse_input(input);
+    // let (tx, rx) = mpsc::channel();
+
+    // for (i, bp) in bps.iter().enumerate() {
+    //     let bp = bp.clone();
+    //     let tx = tx.clone();
+    //     thread::spawn(move || {
+    //         let max = search(&bp, 24);
+    //         tx.send((i, max)).unwrap();
+    //     });
+    // }
+
+    // let mut wait = bps.len();
+    // let mut sum = 0;
+    // for (i, v) in rx {
+    //     sum += (i + 1) as i32 * v;
+    //     wait -= 1;
+    //     if wait == 0 {
+    //         break;
+    //     }
+    // }
+    // sum
+
     let bps = parse_input(input);
-    let (tx, rx) = mpsc::channel();
-
-    for (i, bp) in bps.iter().enumerate() {
-        let bp = *bp;
-        let tx = tx.clone();
-        thread::spawn(move || {
-            let max = search(&bp, 24);
-            tx.send((i, max)).unwrap();
-        });
-    }
-
-    let mut wait = bps.len();
-    let mut sum = 0;
-    for (i, v) in rx {
-        sum += (i + 1) as i32 * v;
-        wait -= 1;
-        if wait == 0 {
-            break;
-        }
-    }
-    sum
-
-    // bps.iter()
-    //     .map(|v| search(v, 24))
-    //     .enumerate()
-    //     .map(|(i, v)| (i + 1) as i32 * v)
-    //     .sum()
+    // for (i, bp) in bps.iter().enumerate() {
+    //     let max = search(&bp, 24);
+    // }
+    bps.iter()
+        .map(|v| search(v, 24))
+        .enumerate()
+        .map(|(i, v)| (i + 1) as i32 * v)
+        .sum()
 }
 
 pub fn part_two(input: &str) -> i32 {
+    // let bps = parse_input(input);
+    // let (tx, rx) = mpsc::channel();
+
+    // for bp in bps.iter().take(3) {
+    //     let bp = bp.clone();
+    //     let tx = tx.clone();
+    //     thread::spawn(move || {
+    //         let max = search(&bp, 32);
+    //         tx.send(max).unwrap();
+    //     });
+    // }
+
+    // let mut wait = 3.min(bps.len());
+    // let mut ans = 1;
+    // for v in rx {
+    //     ans *= v;
+    //     wait -= 1;
+    //     if wait == 0 {
+    //         break;
+    //     }
+    // }
+    // ans
     let bps = parse_input(input);
-    let (tx, rx) = mpsc::channel();
-
-    for bp in bps.iter().take(3) {
-        let bp = *bp;
-        let tx = tx.clone();
-        thread::spawn(move || {
-            let max = search(&bp, 32);
-            tx.send(max).unwrap();
-        });
-    }
-
-    let mut wait = 3.min(bps.len());
-    let mut ans = 1;
-    for v in rx {
-        ans *= v;
-        wait -= 1;
-        if wait == 0 {
-            break;
-        }
-    }
-    ans
-
-    // bps.iter().take(3).map(|v| search(v, 32)).product()
-    // let a = search(&bps[0], 32);
-    // let b = search(&bps[1], 32);
-    // let c = search(&bps[2], 32);
-    // a * b * c
+    bps.iter().take(3).map(|v| search(v, 32)).product()
 }
 
 #[cfg(test)]
