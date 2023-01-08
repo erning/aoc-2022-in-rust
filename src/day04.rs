@@ -13,8 +13,8 @@ fn parse_input(input: &str) -> Vec<[i32; 4]> {
 
 pub fn part_one(input: &str) -> usize {
     parse_input(input)
-        .into_iter()
-        .filter(|[a, b, c, d]| (a > c && b <= d) || (c >= a && d <= b))
+        .iter()
+        .filter(|[a, b, c, d]| (a >= c && b <= d) || (c >= a && d <= b))
         .count()
 }
 
