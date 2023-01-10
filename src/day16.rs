@@ -4,14 +4,13 @@ use std::collections::VecDeque;
 
 // adjacency list node
 type Valve<'a> = (&'a str, i32, Vec<&'a str>); // name, rate, neighbors
-type Valves<'a> = Vec<Valve<'a>>;
 
 // adjacency matrix
 //   - vertice is the id of valve
 //   - edge is the distance of the two valve
 type Graph = Vec<Vec<Option<i32>>>;
 
-fn parse_input(input: &str) -> Vec<(&str, i32, Vec<&str>)> {
+fn parse_input(input: &str) -> Vec<Valve> {
     input
         .lines()
         .map(|v| {
@@ -24,7 +23,7 @@ fn parse_input(input: &str) -> Vec<(&str, i32, Vec<&str>)> {
         .collect()
 }
 
-fn build_graph(valves: &Valves) -> Graph {
+fn build_graph(valves: &[Valve]) -> Graph {
     // name to index
     let map: HashMap<&str, usize> = valves
         .iter()
@@ -116,9 +115,10 @@ fn search(input: &str, n: usize, minutes: i32) -> i32 {
             .iter()
             .filter(|&v| 1 << v & opened == 0)
             .filter_map(|&next| match graph[valve][next] {
-                Some(wait) if time >= wait => Some((next, wait + 1)),
+                Some(wait) => Some((next, wait + 1)),
                 _ => None,
             })
+            .filter(|&(_, wait)| time >= wait)
             .for_each(|(next, wait)| {
                 let time = time - wait;
                 let estimated = estimated + valves[next].1 * time;
@@ -131,6 +131,7 @@ fn search(input: &str, n: usize, minutes: i32) -> i32 {
                 queue.push((h, status, (m + 1) % n));
             });
     }
+
     max_released
 }
 
