@@ -87,7 +87,7 @@ Duration: (9µs, 99.758ms)
 --- Day 16: Proboscidea Volcanium ---
 Part One: 1720
 Part Two: 2582
-Duration: (15.093ms, 1.027122s)
+Duration: (12.373ms, 468.535ms)
 
 --- Day 17: Pyroclastic Flow ---
 Part One: 3173

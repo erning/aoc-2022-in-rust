@@ -1,5 +1,15 @@
+use std::collections::BinaryHeap;
 use std::collections::HashMap;
 use std::collections::VecDeque;
+
+// adjacency list node
+type Valve<'a> = (&'a str, i32, Vec<&'a str>); // name, rate, neighbors
+type Valves<'a> = Vec<Valve<'a>>;
+
+// adjacency matrix
+//   - vertice is the id of valve
+//   - edge is the distance of the two valve
+type Graph = Vec<Vec<Option<i32>>>;
 
 fn parse_input(input: &str) -> Vec<(&str, i32, Vec<&str>)> {
     input
@@ -14,7 +24,7 @@ fn parse_input(input: &str) -> Vec<(&str, i32, Vec<&str>)> {
         .collect()
 }
 
-fn build_graph(valves: &[(&str, i32, Vec<&str>)]) -> Vec<Vec<Option<i32>>> {
+fn build_graph(valves: &Valves) -> Graph {
     // name to index
     let map: HashMap<&str, usize> = valves
         .iter()
@@ -43,98 +53,93 @@ fn build_graph(valves: &[(&str, i32, Vec<&str>)]) -> Vec<Vec<Option<i32>>> {
     graph
 }
 
-fn explore(input: &str, start: &[&str], minutes: i32) -> i32 {
-    // name, rate, neighbors
+fn search(input: &str, n: usize, minutes: i32) -> i32 {
     let valves = parse_input(input);
-
-    // graph - the distance from a valve to another
     let graph = build_graph(&valves);
-
-    // valves has rate (valve_id, valve_mask, rate)
-    let nexts: Vec<(usize, u64, i32)> = valves
+    let rated_valves: Vec<usize> = valves
         .iter()
         .enumerate()
         .filter(|(_, (_, rate, _))| *rate > 0)
-        .map(|(i, (_, rate, _))| (i, *rate))
-        .enumerate()
-        .map(|(i, (id, rate))| (id, 1 << i, rate))
+        .map(|(i, _)| i)
         .collect();
 
-    let start: Vec<(usize, i32)> = start
-        .iter()
-        .map(|start| {
-            (
-                valves
-                    .iter()
-                    .enumerate()
-                    .find(|(_, (name, _, _))| name == start)
-                    .map(|(i, _)| i)
-                    .unwrap(),
-                minutes,
-            )
-        })
-        .collect();
+    let mut max_released = 0;
 
-    #[allow(clippy::too_many_arguments)]
-    fn dfs(
-        ids: Vec<(usize, i32)>,
-        idx: usize,
-        opened: u64,
-        estimated: i32,
-        graph: &Vec<Vec<Option<i32>>>,
-        nexts: &Vec<(usize, u64, i32)>,
-        visited: &mut HashMap<(Vec<usize>, u64), i32>,
-        max: &mut i32,
-    ) {
-        if estimated > *max {
-            *max = estimated;
-        }
-        let (id, time) = ids[idx];
-        if time <= 0 {
-            return;
-        }
+    // (valve, time, estimated, opened)
+    type Status = (usize, i32, i32, u64);
 
-        let mut k: Vec<usize> = ids.iter().map(|(v, _)| *v).collect();
-        k.sort_unstable();
-        let k: (Vec<usize>, u64) = (k, opened);
-        if let Some(e) = visited.get_mut(&k) {
-            if estimated > *e {
-                *e = estimated;
-            } else {
-                return;
-            }
-        } else {
-            visited.insert(k, estimated);
-        }
-
-        for &(next_id, next_mask, next_rate) in nexts.iter() {
-            if opened & next_mask != 0 {
-                continue;
-            }
-            if let Some(distance) = graph[id][next_id] {
-                let opened = opened | next_mask;
-                let time = (time - distance - 1).max(0);
-                let estimated = estimated + next_rate * time;
-                let mut ids = ids.clone();
-                ids[idx] = (next_id, time);
-                let idx = (idx + 1) % ids.len();
-                dfs(ids, idx, opened, estimated, graph, nexts, visited, max);
-            }
-        }
-    }
+    let start: Status = (
+        valves
+            .iter()
+            .enumerate()
+            .find(|(_, (name, _, _))| *name == "AA")
+            .map(|(i, _)| i)
+            .unwrap(),
+        minutes,
+        0,
+        0,
+    );
 
     let mut visited: HashMap<(Vec<usize>, u64), i32> = HashMap::new();
-    let mut max = 0;
-    dfs(start, 0, 0, 0, &graph, &nexts, &mut visited, &mut max);
-    max
+    let mut queue: BinaryHeap<(i32, Vec<Status>, usize)> = BinaryHeap::new();
+    (0..n).for_each(|i| queue.push((0, vec![start; n], i)));
+
+    while let Some((_, status, m)) = queue.pop() {
+        let (valve, time, estimated, _) = status[m];
+        let released: i32 = status.iter().map(|(_, _, v, _)| v).sum();
+        if released > max_released {
+            max_released = released;
+        }
+        if time <= 0 {
+            continue;
+        }
+
+        let opened =
+            status.iter().map(|&(_, _, _, v)| v).fold(0, |a, b| a | b);
+
+        let key = {
+            let mut valves: Vec<usize> =
+                status.iter().map(|(v, _, _, _)| *v).collect();
+            valves.sort_unstable();
+            (valves, opened)
+        };
+        if let Some(v) = visited.get_mut(&key) {
+            if released <= *v {
+                continue;
+            }
+            *v = released;
+        } else {
+            visited.insert(key, released);
+        }
+
+        rated_valves
+            .iter()
+            .filter(|&v| 1 << v & opened == 0)
+            .filter_map(|&next| match graph[valve][next] {
+                Some(wait) if time >= wait => Some((next, wait + 1)),
+                _ => None,
+            })
+            .for_each(|(next, wait)| {
+                let time = time - wait;
+                let estimated = estimated + valves[next].1 * time;
+                let opened = opened | 1 << next;
+                let mut status = status.clone();
+                status[m] = (next, time, estimated, opened);
+                let h = released
+                    + estimated
+                    + status.iter().map(|(_, v, _, _)| v).sum::<i32>();
+                queue.push((h, status, (m + 1) % n));
+            });
+    }
+    max_released
 }
 
 pub fn part_one(input: &str) -> i32 {
-    explore(input, &["AA"], 30)
+    search(input, 1, 30)
 }
 
 pub fn part_two(input: &str) -> i32 {
-    explore(input, &["AA"; 2], 26)
+    search(input, 2, 26)
 }
 
 #[cfg(test)]
