@@ -32,7 +32,7 @@ fn build_graph(valves: &[Valve]) -> Graph {
         .collect();
 
     let n = valves.len();
-    let mut graph: Vec<Vec<Option<i32>>> = vec![vec![None; n]; n];
+    let mut graph: Graph = vec![vec![None; n]; n];
     for (a, _, _) in valves.iter() {
         let a = *(map.get(a).unwrap());
         let mut queue: VecDeque<(i32, usize)> = VecDeque::new();
@@ -79,7 +79,7 @@ fn search(input: &str, n: usize, minutes: i32) -> i32 {
         0,
     );
 
-    let mut visited: HashMap<(Vec<usize>, u64), i32> = HashMap::new();
+    let mut visited: HashMap<(u64, u64), i32> = HashMap::new();
     let mut queue: BinaryHeap<(i32, Vec<Status>, usize)> = BinaryHeap::new();
     (0..n).for_each(|i| queue.push((0, vec![start; n], i)));
 
@@ -96,12 +96,13 @@ fn search(input: &str, n: usize, minutes: i32) -> i32 {
         let opened =
             status.iter().map(|&(_, _, _, v)| v).fold(0, |a, b| a | b);
 
-        let key = {
-            let mut valves: Vec<usize> =
-                status.iter().map(|(v, _, _, _)| *v).collect();
-            valves.sort_unstable();
-            (valves, opened)
-        };
+        let key = (
+            status
+                .iter()
+                .map(|&(v, _, _, _)| 1 << v)
+                .fold(0, |a, b| a | b),
+            opened,
+        );
         if let Some(v) = visited.get_mut(&key) {
             if released <= *v {
                 continue;
