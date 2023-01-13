@@ -8,7 +8,7 @@ type Valve<'a> = (&'a str, i32, Vec<&'a str>); // name, rate, neighbors
 // adjacency matrix
 //   - vertice is the id of valve
 //   - edge is the distance of the two valve
-type Graph = Vec<Vec<Option<i32>>>;
+type Graph = Vec<Vec<i32>>;
 
 fn parse_input(input: &str) -> Vec<Valve> {
     input
@@ -32,16 +32,16 @@ fn build_graph(valves: &[Valve]) -> Graph {
         .collect();
 
     let n = valves.len();
-    let mut graph: Graph = vec![vec![None; n]; n];
+    let mut graph: Graph = vec![vec![-1; n]; n];
     for (a, _, _) in valves.iter() {
         let a = *(map.get(a).unwrap());
         let mut queue: VecDeque<(i32, usize)> = VecDeque::new();
         queue.push_back((0, a));
         while let Some((distance, b)) = queue.pop_front() {
-            if graph[a][b].is_some() {
+            if graph[a][b] >= 0 {
                 continue;
             }
-            graph[a][b] = Some(distance);
+            graph[a][b] = distance;
             let (_, _, neighbors) = &valves[b];
             for neighbor in neighbors {
                 let neighbor = *(map.get(neighbor).unwrap());
@@ -115,10 +115,7 @@ fn search(input: &str, n: usize, minutes: i32) -> i32 {
         rated_valves
             .iter()
             .filter(|&v| 1 << v & opened == 0)
-            .filter_map(|&next| match graph[valve][next] {
-                Some(wait) => Some((next, wait + 1)),
-                _ => None,
-            })
+            .map(|&next| (next, graph[valve][next] + 1))
             .filter(|&(_, wait)| time >= wait)
             .for_each(|(next, wait)| {
                 let time = time - wait;
